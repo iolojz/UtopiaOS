@@ -5,7 +5,7 @@
 
 #include <iterator>
 
-namespace JayZOS
+namespace UtopiaOS
 {
     namespace UEFI
     {
@@ -29,20 +29,20 @@ namespace JayZOS
             EfiMaxMemoryType
         };
             
-        static constexpr pagesize = (1 << 12);
+        static constexpr common::un pagesize = (common::un(1) << 12);
         
         using physical_address = common::uint64;
         using virtual_address = common::uint64;
         
-        static constexpr common::uint64 EFI_MEMORY_UC      = (1 <<  0);
-        static constexpr common::uint64 EFI_MEMORY_WC      = (1 <<  1);
-        static constexpr common::uint64 EFI_MEMORY_WT      = (1 <<  2);
-        static constexpr common::uint64 EFI_MEMORY_WB      = (1 <<  3);
-        static constexpr common::uint64 EFI_MEMORY_UCE     = (1 <<  4);
-        static constexpr common::uint64 EFI_MEMORY_WP      = (1 << 12);
-        static constexpr common::uint64 EFI_MEMORY_RP      = (1 << 13);
-        static constexpr common::uint64 EFI_MEMORY_XP      = (1 << 14);
-        static constexpr common::uint64 EFI_MEMORY_RUNTIME = (1 << 63);
+        static constexpr common::uint64 EFI_MEMORY_UC      = (common::uint64(1) <<  0);
+        static constexpr common::uint64 EFI_MEMORY_WC      = (common::uint64(1) <<  1);
+        static constexpr common::uint64 EFI_MEMORY_WT      = (common::uint64(1) <<  2);
+        static constexpr common::uint64 EFI_MEMORY_WB      = (common::uint64(1) <<  3);
+        static constexpr common::uint64 EFI_MEMORY_UCE     = (common::uint64(1) <<  4);
+        static constexpr common::uint64 EFI_MEMORY_WP      = (common::uint64(1) << 12);
+        static constexpr common::uint64 EFI_MEMORY_RP      = (common::uint64(1) << 13);
+        static constexpr common::uint64 EFI_MEMORY_XP      = (common::uint64(1) << 14);
+        static constexpr common::uint64 EFI_MEMORY_RUNTIME = (common::uint64(1) << 63);
         
         struct memory_descriptor_v1
         {
@@ -59,7 +59,7 @@ namespace JayZOS
             friend class memory_map;
             
             using iterator_category = std::random_access_iterator_tag;
-            using value_type = memory_descriptor_v1;
+            using value_type = const memory_descriptor_v1;
             using reference = const memory_descriptor_v1 &;
             using pointer = const memory_descriptor_v1 *;
             using difference_type = common::sn;
@@ -67,56 +67,56 @@ namespace JayZOS
             pointer descriptor;
             common::un descriptor_size;
             
-            const_memory_map_iterator_v1( memory_map_iterator_v1 *d, common::un s )
-            : descriptor( d ), descriptor_size( s ) {}
+            const_memory_map_iterator_v1( void *d, common::un s )
+            : descriptor( reinterpret_cast<pointer>( d ) ), descriptor_size( s ) {}
         public:
-            memory_map_iterator_v1 &operator++( void )
+            const_memory_map_iterator_v1 &operator++( void )
             {
-                descriptor = std::reinterpret_cast<pointer>( std::reinterpret_cast<common::uintptr>( descriptor ) + descriptor_size );
+                descriptor = reinterpret_cast<pointer>( reinterpret_cast<common::uintptr>( descriptor ) + descriptor_size );
                 return *this;
             }
-            memory_map_iterator_v1 operator++( int ) { memory_map_iterator_v1 cp( *this ); ++(*this); return cp; }
+            const_memory_map_iterator_v1 operator++( int ) { const_memory_map_iterator_v1 cp( *this ); ++(*this); return cp; }
             
-            memory_map_iterator_v1 &operator--( void )
+            const_memory_map_iterator_v1 &operator--( void )
             {
-                descriptor = std::reinterpret_cast<pointer>( std::reinterpret_cast<common::uintptr>( descriptor ) - descriptor_size );
+                descriptor = reinterpret_cast<pointer>( reinterpret_cast<common::uintptr>( descriptor ) - descriptor_size );
                 return *this;
             }
-            memory_map_iterator_v1 operator--( int ) { memory_map_iterator_v1 cp( *this ); --(*this); return cp; }
+            const_memory_map_iterator_v1 operator--( int ) { const_memory_map_iterator_v1 cp( *this ); --(*this); return cp; }
             
             value_type &operator*( void ) const { return *descriptor; }
             pointer operator->( void ) const { return descriptor; }
             
-            bool operator==( const memory_map_iterator_v1 &it ) const { return descriptor == it.descriptor; }
-            bool operator!=( const memory_map_iterator_v1 &it ) const { return descriptor != it.descriptor; }
+            bool operator==( const const_memory_map_iterator_v1 &it ) const { return descriptor == it.descriptor; }
+            bool operator!=( const const_memory_map_iterator_v1 &it ) const { return descriptor != it.descriptor; }
             
-            bool operator<( const memory_map_iterator_v1 &it ) const { return descriptor < it.descriptor; }
-            bool operator<=( const memory_map_iterator_v1 &it ) const { return descriptor <= it.descriptor; }
-            bool operator>=( const memory_map_iterator_v1 &it ) const { return descriptor >= it.descriptor; }
-            bool operator>( const memory_map_iterator_v1 &it ) const { return descriptor > it.descriptor; }
+            bool operator<( const const_memory_map_iterator_v1 &it ) const { return descriptor < it.descriptor; }
+            bool operator<=( const const_memory_map_iterator_v1 &it ) const { return descriptor <= it.descriptor; }
+            bool operator>=( const const_memory_map_iterator_v1 &it ) const { return descriptor >= it.descriptor; }
+            bool operator>( const const_memory_map_iterator_v1 &it ) const { return descriptor > it.descriptor; }
             
-            memory_map_iterator_v1 &operator+=( difference_type n )
+            const_memory_map_iterator_v1 &operator+=( difference_type n )
             {
-                descriptor = std::reinterpret_cast<pointer>( std::reinterpret_cast<common::uintptr>( descriptor ) + n * descriptor_size );
+                descriptor = reinterpret_cast<pointer>( reinterpret_cast<common::uintptr>( descriptor ) + n * descriptor_size );
                 return *this;
             }
-            memory_map_iterator_v1 operator+( difference_type n ) const { memory_map_iterator_v1 cp( *this ); cp += n; return cp; }
+            const_memory_map_iterator_v1 operator+( difference_type n ) const { const_memory_map_iterator_v1 cp( *this ); cp += n; return cp; }
             
-            memory_map_iterator_v1 &operator-=( difference_type n )
+            const_memory_map_iterator_v1 &operator-=( difference_type n )
             {
-                descriptor = std::reinterpret_cast<pointer>( std::reinterpret_cast<common::uintptr>( descriptor ) - n * descriptor_size );
+                descriptor = reinterpret_cast<pointer>( reinterpret_cast<common::uintptr>( descriptor ) - n * descriptor_size );
                 return *this;
             }
-            memory_map_iterator_v1 operator-( difference_type n ) const { memory_map_iterator_v1 cp( *this ); cp -= n; return cp; }
+            const_memory_map_iterator_v1 operator-( difference_type n ) const { const_memory_map_iterator_v1 cp( *this ); cp -= n; return cp; }
             
-            difference_type operator-( memory_map_iterator_v1 it ) const
+            difference_type operator-( const_memory_map_iterator_v1 it ) const
             {
-                return (std::reinterpret_cast<common::uintptr>( descriptor ) -
-                        std::reinterpret_cast<common::uintptr>( it.descriptor ) / descriptor_size;
+                return (reinterpret_cast<common::uintptr>( descriptor ) -
+                        reinterpret_cast<common::uintptr>( it.descriptor ) / descriptor_size);
             }
             
             reference operator[]( difference_type n ) const
-            { return *std::reinterpret_cast<pointer>( std::reinterpret_cast<common::uintptr>( descriptor ) + n * descriptor_size ); }
+            { return *reinterpret_cast<pointer>( reinterpret_cast<common::uintptr>( descriptor ) + n * descriptor_size ); }
         };
                 
         struct memory_map
@@ -133,8 +133,8 @@ namespace JayZOS
             
             using const_iterator_v1 = const_memory_map_iterator_v1;
             
-            const_iterator_v1 cbegin_v1( void ) const { return const_iterator_v1( descriptors ); }
-            const_iterator_v1 cend_v1( void ) const { return (const_iterator_v1( descriptors ) += number_of_descriptors); }
+            const_iterator_v1 cbegin_v1( void ) const { return const_iterator_v1( descriptors, descriptor_size ); }
+            const_iterator_v1 cend_v1( void ) const { return (const_iterator_v1( descriptors, descriptor_size ) += number_of_descriptors); }
         };
     }
 }

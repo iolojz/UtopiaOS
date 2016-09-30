@@ -1,13 +1,13 @@
 #ifndef H_kernel_kernel_main
 #define H_kernel_kernel_main
 
-namespace JayZOS
+namespace UtopiaOS
 {
     class environment;
     
     namespace Kernel
     {
-        void kernel_main( const environment * ) [[noreturn]];
+        [[noreturn]] void kernel_main( const environment * );
     }
 }
 

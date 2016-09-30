@@ -3,13 +3,13 @@
 
 #include <target/config.hpp>
 
-namespace JayZOS
+namespace UtopiaOS
 {
     namespace kernel
     {
-        static inline void trap( void ) [[noreturn]]
+        [[noreturn]] static inline void trap( void )
         {
-            JAYZOS_TRAP();
+            UTOPIAOS_TRAP();
         }
     }
 }

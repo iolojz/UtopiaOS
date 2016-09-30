@@ -2,9 +2,10 @@
 #define H_kernel_logger
 
 #include "types.hpp"
-#include "atomic.hpp"
 
-namespace JayZ
+#include <atomic>
+
+namespace UtopiaOS
 {
     namespace kernel
     {
@@ -23,13 +24,13 @@ namespace JayZ
             void log( un number_of_cstrings, ... ) = 0;
         };
         
-        atomic<logger *> assertion_logger = nullptr;
+        std::atomic<logger *> assertion_logger( nullptr );
         
         template<class ...STRINGS>
-        void log( logger *l, STRINGS &&strings )
+        void log( logger *l, STRINGS && ...strings )
         {
             if( l != nullptr )
-                l->log( len<STRINGS>::value, strings... );
+                l->log( sizeof...(STRINGS), strings... );
         }
     }
 }

@@ -7,7 +7,7 @@
 #include <memory_resource>
 #include <algorithm>
 
-namespace JayZOS
+namespace UtopiaOS
 {
     namespace kernel
     {

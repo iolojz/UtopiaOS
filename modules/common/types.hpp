@@ -4,11 +4,11 @@
 #include <target/headers.hpp>
 
 /********* Necessary compiler headers *********/
-#include <HPATH_fixed_width_integers>
-#include <HPATH_uintptr>
+#include HPATH_fixed_width_integers
+#include HPATH_uintptr
 /**********************************************/
 
-namespace JayZOS
+namespace UtopiaOS
 {
     namespace common
     {

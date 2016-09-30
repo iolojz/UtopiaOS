@@ -9,7 +9,7 @@
  * some vector<T, Allocator>
  **/
 
-#define HPATH_fixed_width_integers cstdint
-#define HPATH_uintptr              cstdint
+#define HPATH_fixed_width_integers <cstdint>
+#define HPATH_uintptr              <cstdint>
 
 #endif /* H_common_target_headers */

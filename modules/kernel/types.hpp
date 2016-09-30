@@ -3,7 +3,7 @@
 
 #include <common/types.hpp>
 
-namespace JayZOS
+namespace UtopiaOS
 {
     namespace kernel
     {

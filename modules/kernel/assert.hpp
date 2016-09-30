@@ -5,7 +5,7 @@
 #include "logger.hpp"
 #include "trap.hpp"
 
-namespace JayZOS
+namespace UtopiaOS
 {
     namespace kernel
     {

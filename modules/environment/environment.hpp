@@ -4,7 +4,7 @@
 #include <common/memory.hpp>
 #include "memory.hpp"
 
-namespace JayZOS
+namespace UtopiaOS
 {
     struct environment
     {

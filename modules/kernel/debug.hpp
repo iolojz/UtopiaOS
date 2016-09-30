@@ -3,18 +3,17 @@
 
 #include <target/config.hpp>
 
-#include "template_utilities.hpp"
-#include "log.hpp"
+#include "logger.hpp"
 #include "trap.hpp"
 
-namespace JayZOS
+namespace UtopiaOS
 {
     namespace kernel
     {
         template<class STRING>
         void debug_assert( bool assertion, STRING &&error_message )
         {
-#if JAYZOS_ENABLE_DEBUG_ASSERTS
+#if UTOPIAOS_ENABLE_DEBUG_ASSERTS
             if( assertion == false )
             {
                 log( assertion_logger, "Assertion failed: ",

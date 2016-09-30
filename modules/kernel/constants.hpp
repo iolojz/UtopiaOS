@@ -5,11 +5,11 @@
 
 #include "types.hpp"
 
-namespace JayZOS
+namespace UtopiaOS
 {
     namespace kernel
     {
-        static constexpr un pagesize = JAYZOS_KERNEL_PAGESIZE;
+        static constexpr un pagesize = UTOPIAOS_KERNEL_PAGESIZE;
         
         static_assert( ((pagesize - 1) & pagesize) == 0,
                       "pagesize must be a power of two" );

@@ -8,7 +8,7 @@
 #include "memory_manager.hpp"
 #include "dynarray.hpp"
 
-using namespace JayZOS;
+using namespace UtopiaOS;
 
 namespace
 {
@@ -47,7 +47,7 @@ void kernel::kernel_main( const environment *env ) [[noreturn]]
 
 unsynchronized_memory_manager setup_memory_manager( const environment *env )
 {
-    using namespace JayZOS;
+    using namespace UtopiaOS;
     using namespace kernel;
     
     auto kernel_image_region = env->kernel_image_region;
@@ -57,7 +57,7 @@ unsynchronized_memory_manager setup_memory_manager( const environment *env )
     // First we alloca() enough space to convert the memora map
     // into our own format.
     auto memmap_memory_requirement = memory_map::maximum_conversion_requirement( UEFI_memmap );
-    void *memmap_memory = JAYZOS_ALLOCA_WITH_ALIGN( memmap_memory_requirement.size,
+    void *memmap_memory = UTOPIAOS_ALLOCA_WITH_ALIGN( memmap_memory_requirement.size,
                                                    memmap_memory_requirement.alignment );
     std::pmr::monotonic_buffer_resource memmap_memory_resource( memmap_memory,
                                                                memmap_memory_requirement.size );
@@ -70,7 +70,7 @@ unsynchronized_memory_manager setup_memory_manager( const environment *env )
     // Now before creating the memory manager, we need to
     // make sure it knows about already occupied memory.
     // We introduce the "occupied memory description": OMD
-    void *OMD_memory = JAYZOS_ALLOCA_WITH_ALIGN( 2 * sizeof(common::memory_region),
+    void *OMD_memory = UTOPIAOS_ALLOCA_WITH_ALIGN( 2 * sizeof(common::memory_region),
                                                   alignof(common::memory_region) );
     std::pmr::monotonic_buffer_resource OMD_memory_resource( memmap_memory,
                                                             memmap_memory_requirement.size );
