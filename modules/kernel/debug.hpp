@@ -1,28 +1,40 @@
+/** \ingroup kernel
+ * \{
+ *
+ * \file kernel/debug.hpp
+ * \brief This file contains simple functions
+ *        that can be used for debugging purposes.
+ */
+
 #ifndef H_kernel_debug
 #define H_kernel_debug
 
 #include <target/config.hpp>
 
-#include "logger.hpp"
-#include "trap.hpp"
+#include "assert.hpp"
 
 namespace UtopiaOS
 {
     namespace kernel
     {
+        /** \brief Simple assertion function that only checks
+         *         the assertion when the compile-time debug flag
+         *         UTOPIAOS_ENABLE_DEBUG_ASSERTS is set.
+         * \tparam STRING Some \a logger compatible string type
+         * \param[in] assertion The assertion
+         * \param[in] error_message The error message to print
+         *            if the assertion was false.
+         */
         template<class STRING>
         void debug_assert( bool assertion, STRING &&error_message )
         {
 #if UTOPIAOS_ENABLE_DEBUG_ASSERTS
-            if( assertion == false )
-            {
-                log( assertion_logger, "Assertion failed: ",
-                    std::forward<STRING>( error_message ) );
-                trap();
-            }
+            assert( assertion, std::forward<STRING>( error_message ) );
 #endif
         }
     }
 }
 
 #endif
+
+/** \} */

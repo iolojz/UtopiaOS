@@ -1,20 +1,40 @@
+/** \ingroup kernel
+ * \{
+ *
+ * \file kernel/dynarray.hpp
+ * \brief This file contains a simple dynarray
+ *        implementation similar to the rejected
+ *        c++14 proposal.
+ */
+
 #ifndef H_kernel_dynarray
 #define H_kernel_dynarray
 
-#include "types.hpp"
+#include <common/types.hpp>
 
 #include <algorithm>
+#include <iterator>
 
 namespace UtopiaOS
 {
     namespace kernel
     {
-        template<typename T> class dynarray
+        /** \class dynarray
+         * \brief A dynarray is like the ordinary std::array
+         *        but its length is fixed upon construction
+         *        and not compile-time.
+         * \tparam T The value type of the dynarray object
+         * \tparam Allocator the allocator type
+         *
+         * \warning 
+         */
+        template<class T, class Allocator> class dynarray
         {
         public:
+            using allocator_type = Allocator;
             using value_type = T;
-            using size_type = un;
-            using difference_type = sn;
+            using size_type = common::un;
+            using difference_type = common::sn;
             using reference = T &;
             using const_reference = const T &;
             using pointer = T *;
@@ -22,12 +42,12 @@ namespace UtopiaOS
             using iterator = T *;
             using const_iterator = const T *;
             using reverse_iterator = std::reverse_iterator<iterator>;
-            using const_reverse_iterator = std::const_reverse_iterator<iterator>;
+            using const_reverse_iterator = std::reverse_iterator<const_iterator>;
             
         private:
+            allocator_type allocator;
             size_type length;
             pointer buffer;
-            
         public:
             size_type size( void ) const { return length; }
             
@@ -55,15 +75,23 @@ namespace UtopiaOS
             const_reference operator[]( size_type i ) const { return data()[i]; }
             
             dynarray( const dynarray & ) = default;
-            dynarray( dynarray && ) = default;
             
             dynarray &operator=( const dynarray & ) = delete;
             dynarray &operator=( dynarray && ) = delete;
             
-            template<class RandomAccessIterator, class Allocator>
+            dynarray( std::initializer_list<value_type> init, allocator_type &&alloc )
+            : dynarray( init.begin(), init.end(), alloc ) {}
+            
+            template<class RandomAccessIterator>
             dynarray( RandomAccessIterator first, RandomAccessIterator last,
-                     const Allocator &allocator )
-            : length( last - first ), buffer( allocator( length ) )
+                     allocator_type &&alloc )
+            : dynarray( first, last, alloc ) {}
+            
+            template<class RandomAccessIterator>
+            dynarray( RandomAccessIterator first, RandomAccessIterator last,
+                     const allocator_type &alloc )
+            : allocator( alloc ), length( last - first ),
+            buffer( allocator.allocate( length ) )
             {
                 pointer current = buffer;
                 try
@@ -75,7 +103,7 @@ namespace UtopiaOS
                     }
                 } catch( ... )
                 {
-                    while( current != first )
+                    while( current != buffer )
                     {
                         --current;
                         current->~value_type();
@@ -88,7 +116,7 @@ namespace UtopiaOS
             
             ~dynarray( void )
             {
-                std::foreach( begin(), end(), [] ( reference r ) {
+                std::for_each( begin(), end(), [] ( reference r ) {
                     r.~value_type();
                 } );
                              
@@ -99,3 +127,5 @@ namespace UtopiaOS
 }
 
 #endif
+
+/** \} */
