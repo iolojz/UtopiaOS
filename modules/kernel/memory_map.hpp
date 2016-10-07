@@ -92,7 +92,12 @@ namespace UtopiaOS
              */
             memory_descriptor( const UEFI::memory_descriptor_v1 &uefi_desc );
             
-            /** \brief Checks whether
+            /** \brief Checks whether the memory described by
+             *         the memory descriptor can be used to
+             *         fulfil a memory request.
+             * \returns \a true if the request can be fulfilled
+             *          and \a false otherwise.
+             */
             bool can_meet_request( const memory_request &request ) const
             {
                 static_assert( sizeof(common::uintptr) >= sizeof(common::un),
