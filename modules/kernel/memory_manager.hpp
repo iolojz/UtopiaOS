@@ -69,11 +69,21 @@ namespace UtopiaOS
              */
             unsynchronized_memory_manager( const unsynchronized_memory_manager & ) = delete;
             
+            /** \brief An unsynchronized_memory_manager is explicitly
+             *         move-constructible!
+             */
+            unsynchronized_memory_manager( unsynchronized_memory_manager && ) = default;
+            
             /** \brief Because an unsynchronized_memory_manager manages a single
              *         std::pmr::unsynchronized_pool_resource which is itself
              *         not copy-assignable, the copy-assign constructor has to be deleted.
              */
             unsynchronized_memory_manager &operator=( const unsynchronized_memory_manager & ) = delete;
+            
+            /** \brief An unsynchronized_memory_manager is explicitly
+             *         move-assignable!
+             */
+            unsynchronized_memory_manager &operator=( unsynchronized_memory_manager && ) = default;
         };
     }
 }
