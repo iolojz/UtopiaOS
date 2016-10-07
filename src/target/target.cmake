@@ -1,0 +1,1 @@
+message (FATAL_ERROR "Cross-compiling is not supported yet)

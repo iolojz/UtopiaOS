@@ -3,9 +3,17 @@ cmake_minimum_required (VERSION 3.3)
 
 project (UtopiaOS VERSION 0.1)
 
+# Build a reduced version of the OS that can be run in a 
+# hosted environment.
+set (UTOPIAOS_HOSTED YES)
+
+if (${UTOPIAOS_HOSTED} EQUAL NO)
+  include (src/target/target.cmake)
+endif ()
+
 set (UTOPIAOS_SUBTARGETS) # Will be filled by subdirectories
 
-add_subdirectory (modules)
+add_subdirectory (src)
 
 #foreach (subtarget ${UTOPIAOS_SUBTARGETS})
 #  get_target_property (subtarget_type ${subtarget} TARGET_TYPE)
