@@ -1,0 +1,158 @@
+#/** \defgroup stubs Stubs
+* \{
+*
+* \file memory_resource
+* \brief This file is a stub and just declares interfaces
+*        that do not do anything.
+*
+* \todo Use the appropriate c++17 header when it
+* becomes available!
+*/
+
+#ifndef H_memory_resource
+#define H_memory_resource
+
+namespace std
+{
+    namespace pmr
+    {
+        struct pool_options
+        {
+            std::size_t max_blocks_per_chunk;
+            std::size_t largest_required_pool_block;
+        };
+
+        class memory_resource
+        {
+        public:
+            virtual ~memory_resource() {}
+            
+            void* allocate(std::size_t bytes,
+                           std::size_t alignment = alignof(std::max_align_t));
+            void deallocate(void* p,
+                            std::size_t bytes,
+                            std::size_t alignment = alignof(std::max_align_t));
+            bool is_equal(const memory_resource& other) const;
+        protected:
+            virtual void* do_allocate(std::size_t bytes, std::size_t alignment) = 0;
+            virtual void do_deallocate(void* p, std::size_t bytes, std::size_t alignment) = 0;
+            virtual bool do_is_equal(const std::pmr::memory_resource& other) const = 0;
+        };
+        
+        class monotonic_buffer_resource : public memory_resource
+        {
+        public:
+            monotonic_buffer_resource();
+            explicit monotonic_buffer_resource(std::pmr::memory_resource* upstream);
+            explicit monotonic_buffer_resource(std::size_t initial_size);
+            monotonic_buffer_resource(std::size_t initial_size,
+                                      std::pmr::memory_resource* upstream);
+            monotonic_buffer_resource(void* buffer, std::size_t buffer_size);
+            monotonic_buffer_resource(void* buffer, std::size_t buffer_size,
+                                      std::pmr::memory_resource* upstream);
+            monotonic_buffer_resource(const monotonic_buffer_resource&) = delete;
+
+            monotonic_buffer_resource &operator=(const monotonic_buffer_resource&) = delete;
+
+            void release() {}
+            
+            std::pmr::memory_resource* upstream_resource() const;
+            
+            virtual ~monotonic_buffer_resource( void )
+            {
+                this->release();
+            }
+        protected:
+            virtual void* do_allocate(std::size_t bytes, std::size_t alignment);
+            virtual void do_deallocate(void* p, std::size_t bytes, std::size_t alignment);
+            virtual bool do_is_equal(const std::pmr::memory_resource& other) const;
+        };
+
+        class unsynchronized_pool_resource : public memory_resource
+        {
+        public:
+            unsynchronized_pool_resource();
+            explicit unsynchronized_pool_resource(std::pmr::memory_resource* upstream);
+            explicit unsynchronized_pool_resource(const std::pmr::pool_options& opts);
+            unsynchronized_pool_resource(const std::pmr::pool_options& opts,
+                                         std::pmr::memory_resource* upstream);
+            unsynchronized_pool_resource(const unsynchronized_pool_resource&) = delete;
+
+            unsynchronized_pool_resource &operator=(const unsynchronized_pool_resource&) = delete;
+            
+            void release() {}
+
+            std::pmr::memory_resource* upstream_resource() const;
+
+            std::pmr::pool_options options() const;
+            
+            virtual ~unsynchronized_pool_resource( void )
+            {
+                this->release();
+            }
+        protected:
+            virtual void* do_allocate(std::size_t bytes, std::size_t alignment);
+            virtual void do_deallocate(void* p, std::size_t bytes, std::size_t alignment);
+            virtual bool do_is_equal(const std::pmr::memory_resource& other) const;
+        };
+        
+        template< class T >
+        class polymorphic_allocator
+        {
+        public:
+            using value_type = T;
+            
+            polymorphic_allocator();
+            polymorphic_allocator( const polymorphic_allocator& other ) = default;
+            template< class U >
+            polymorphic_allocator( const polymorphic_allocator<U>& other );
+            polymorphic_allocator( memory_resource* r);
+            
+            polymorphic_allocator &operator=( const polymorphic_allocator & ) = delete;
+            
+            T* allocate( std::size_t n );
+            void deallocate(T* p, std::size_t n );
+            
+            template < class U, class... Args >
+            void construct( U* p, Args&&... args );
+            
+            template< class T1, class T2, class... Args1, class... Args2 >
+            void construct( std::pair<T1, T2>* p,
+                           std::piecewise_construct_t,
+                           std::tuple<Args1...> x,
+                           std::tuple<Args2...> y );
+            
+            template< class T1, class T2 >
+            void construct( std::pair<T1, T2>* p );
+            
+            template< class T1, class T2, class U, class V >
+            void construct( std::pair<T1, T2>* p, U&& x, V&& y );
+            
+            template< class T1, class T2, class U, class V >
+            void construct( std::pair<T1, T2>* p, const std::pair<U, V>& xy );
+            
+            template< class T1, class T2, class U, class V >
+            void construct( std::pair<T1, T2>* p, std::pair<U, V>&& xy );
+            
+            template<class U>
+            void destroy(U* p);
+            
+            polymorphic_allocator select_on_container_copy_construction() const;
+            
+            memory_resource* resource() const;
+        };
+    }
+}
+
+template< class T1, class T2 >
+bool operator==( const std::pmr::polymorphic_allocator<T1>& lhs,
+                const std::pmr::polymorphic_allocator<T2>& rhs );
+
+template< class T1, class T2 >
+bool operator!=( const std::pmr::polymorphic_allocator<T1>& lhs,
+                const std::pmr::polymorphic_allocator<T2>& rhs );
+
+
+#endif
+
+/** \} */
