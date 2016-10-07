@@ -12,9 +12,13 @@ set (CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set (MODULE_KERNEL_SOURCES kernel_main.cpp)
 
-# The kernel consists of exactly one executable
-add_executable (kernel ${MODULE_KERNEL_SOURCES})
-set_target_properties (kernel PROPERTIES TARGET_TYPE executable)
+if (UTOPIAOS_HOSTED)
+  add_library (kernel ${MODULE_KERNEL_SOURCES})
+  set_target_properties (kernel PROPERTIES TARGET_TYPE library)
+else ()
+  add_executable (kernel ${MODULE_KERNEL_SOURCES})
+  set_target_properties (kernel PROPERTIES TARGET_TYPE executable)
+endif ()
 
 # Append to target lists
 list (APPEND UTOPIAOS_SUBTARGETS kernel)
