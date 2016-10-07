@@ -12,6 +12,8 @@
 #ifndef H_memory_resource
 #define H_memory_resource
 
+#include <cstddef>
+
 namespace std
 {
     namespace pmr

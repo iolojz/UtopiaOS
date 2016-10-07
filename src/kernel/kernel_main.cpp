@@ -45,45 +45,50 @@ namespace
     morph_into_scheduler_outsource_memory( std::move( memory_pool ) );
 }
 
-unsynchronized_memory_manager setup_memory_manager( const environment *env )
+namespace
 {
-    using namespace UtopiaOS;
     using namespace kernel;
     
-    using memory_descriptor_allocator = std::pmr::polymorphic_allocator<memory_descriptor>;
-    using kernel_memory_map = memory_map<memory_descriptor_allocator>;
-    
-    auto kernel_image_region = env->kernel_image_region;
-    auto kernel_stack_region = env->kernel_stack_region;
-    auto &UEFI_memmap = env->memmap;
-    
-    // First we alloca() enough space to convert the memory map
-    // into our own format.
-    auto memmap_memory_requirement = kernel_memory_map::maximum_conversion_requirement( UEFI_memmap );
-    void *memmap_memory = UTOPIAOS_ALLOCA_WITH_ALIGN( memmap_memory_requirement.size,
-                                                   memmap_memory_requirement.alignment );
-    std::pmr::monotonic_buffer_resource memmap_memory_resource( memmap_memory,
-                                                               memmap_memory_requirement.size );
-    
-    // Next we create a preliminary memory map in the correct
-    // format, but with a helplessly primitive allocator
-    kernel_memory_map stage1_memmap( UEFI_memmap, &memmap_memory_resource );
-    
-    // Now before creating the memory manager, we need to
-    // make sure it knows about already occupied memory.
-    // We introduce the "occupied memory description": omd
-    void *omd_memory = UTOPIAOS_ALLOCA_WITH_ALIGN( 2 * sizeof(common::memory_region),
-                                                  alignof(common::memory_region) );
-    std::pmr::monotonic_buffer_resource omd_memory_resource( memmap_memory,
-                                                            memmap_memory_requirement.size );
-    
-    using omd_allocator = std::pmr::polymorphic_allocator<common::memory_region>;
-    dynarray<common::memory_region, omd_allocator> omd( {kernel_image_region,
-        kernel_stack_region}, &omd_memory_resource );
-    
-    // Finally we can create the memory_manager!
-    return unsynchronized_memory_manager( std::move( stage1_memmap ),
-                                         omd.begin(), omd.end() );
+    unsynchronized_memory_manager setup_memory_manager( const environment *env )
+    {
+        using namespace UtopiaOS;
+        using namespace kernel;
+        
+        using memory_descriptor_allocator = std::pmr::polymorphic_allocator<memory_descriptor>;
+        using kernel_memory_map = memory_map<memory_descriptor_allocator>;
+        
+        auto kernel_image_region = env->kernel_image_region;
+        auto kernel_stack_region = env->kernel_stack_region;
+        auto &UEFI_memmap = env->memmap;
+        
+        // First we alloca() enough space to convert the memory map
+        // into our own format.
+        auto memmap_memory_requirement = kernel_memory_map::maximum_conversion_requirement( UEFI_memmap );
+        void *memmap_memory = UTOPIAOS_ALLOCA_WITH_ALIGN( memmap_memory_requirement.size,
+                                                         memmap_memory_requirement.alignment );
+        std::pmr::monotonic_buffer_resource memmap_memory_resource( memmap_memory,
+                                                                   memmap_memory_requirement.size );
+        
+        // Next we create a preliminary memory map in the correct
+        // format, but with a helplessly primitive allocator
+        kernel_memory_map stage1_memmap( UEFI_memmap, &memmap_memory_resource );
+        
+        // Now before creating the memory manager, we need to
+        // make sure it knows about already occupied memory.
+        // We introduce the "occupied memory description": omd
+        void *omd_memory = UTOPIAOS_ALLOCA_WITH_ALIGN( 2 * sizeof(common::memory_region),
+                                                      alignof(common::memory_region) );
+        std::pmr::monotonic_buffer_resource omd_memory_resource( memmap_memory,
+                                                                memmap_memory_requirement.size );
+        
+        using omd_allocator = std::pmr::polymorphic_allocator<common::memory_region>;
+        dynarray<common::memory_region, omd_allocator> omd( {kernel_image_region,
+            kernel_stack_region}, &omd_memory_resource );
+        
+        // Finally we can create the memory_manager!
+        return unsynchronized_memory_manager( std::move( stage1_memmap ),
+                                             omd.begin(), omd.end() );
+    }
 }
 
 /** \} */
