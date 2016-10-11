@@ -59,8 +59,8 @@ namespace UtopiaOS
                 const auto copy_requirement = old_memmap.copy_requirement();
                 
                 auto it = std::find_if( old_memmap.cbegin(), old_memmap.cend(),
-                                       std::bind( &memory_descriptor::can_meet_request,
-                                                 std::placeholders::_1, copy_requirement ) );
+                    std::bind( &memory_descriptor::can_meet_request<copy_requirement.alignment>,
+                                std::placeholders::_1, copy_requirement ) );
             }
             
             /** \brief Because an unsynchronized_memory_manager manages a single

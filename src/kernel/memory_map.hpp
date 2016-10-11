@@ -17,6 +17,7 @@
 
 #include <memory_resource>
 #include <algorithm>
+#include <limits>
 
 namespace UtopiaOS
 {
@@ -35,11 +36,13 @@ namespace UtopiaOS
         
         /** \struct memory_request
          * \brief Encapsulates a memory requirement
+         * \tparam ALIGN Specifies the alignment
          */
+        template<std::size_t ALIGN>
         struct memory_request
         {
-            common::uint64 size;
-            common::un alignment;
+            std::size_t size;
+            static constexpr std::size_t alignment = ALIGN;
         };
         
         /** \brief Aligns a pointer to a given alignment.
@@ -60,9 +63,10 @@ namespace UtopiaOS
          * \warning If \a alignment is not a power of two,
          *          the behaviour is undefined!
          */
-        static inline common::uintptr align( common::uintptr ptr, common::un alignment )
+        static inline common::uintptr align( common::uintptr ptr, std::size_t alignment )
         {
-            static_assert( sizeof(common::uintptr) >= sizeof(common::un),
+            static_assert( std::numeric_limits<common::uintptr>::max() >=
+                          std::numeric_limits<std::size_t>::max(),
                           "This implementation cannot guarantee to work." );
             debug_assert( (alignment % 2) == 0, "alignment has to be a power of two" );
             
@@ -79,6 +83,11 @@ namespace UtopiaOS
          * \brief Analogous to a UEFI memory descriptor,
          *        but usable by the kernel. It also has
          *        a well-defined size.
+         *
+         * It is guaranteed that
+         * (\a start + \a number_of_pages * \a pagesize)
+         * does not overflow, where \a start is either
+         * \a physical_start or \a virtual_start
          */
         struct memory_descriptor
         {
@@ -95,12 +104,15 @@ namespace UtopiaOS
             /** \brief Checks whether the memory described by
              *         the memory descriptor can be used to
              *         fulfil a memory request.
+             * \tparam ALIGN Specifies the alignment
              * \returns \a true if the request can be fulfilled
              *          and \a false otherwise.
              */
-            bool can_meet_request( const memory_request &request ) const
+            template<std::size_t ALIGN>
+            bool can_meet_request( const memory_request<ALIGN> &request ) const
             {
-                static_assert( sizeof(common::uintptr) >= sizeof(common::un),
+                static_assert( std::numeric_limits<common::uintptr>::max() >=
+                              std::numeric_limits<std::size_t>::max(),
                               "This implementation cannot guarantee to work." );
                 if( type != memory_type::general_purpose )
                     return false;
@@ -160,20 +172,19 @@ namespace UtopiaOS
              * \param[in] uefi_map The UEFI memory map
              * \returns The memory_request
              */
-            static memory_request maximum_conversion_requirement( const UEFI::memory_map &uefi_map )
+            static memory_request<alignof(memory_descriptor)>
+            maximum_conversion_requirement( const UEFI::memory_map &uefi_map )
             {
-                return memory_request{ uefi_map.number_of_descriptors * sizeof(memory_descriptor),
-                    alignof(memory_descriptor) };
+                return { uefi_map.number_of_descriptors * sizeof(memory_descriptor) };
             }
             
             /** \brief Returns a memory_request that when fulfilled
              *         will suffice to copy the memory map.
              * \returns The memory_request
              */
-            memory_request copy_requirement( void ) const
+            memory_request<alignof(memory_descriptor)> copy_requirement( void ) const
             {
-                return memory_request{ descriptors.size() * sizeof(memory_descriptor),
-                    alignof(memory_descriptor) };
+                return { descriptors.size() * sizeof(memory_descriptor) };
             }
             
             /** \brief Constructs a kernel-usable memory map
