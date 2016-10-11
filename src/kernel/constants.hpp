@@ -24,6 +24,7 @@ namespace UtopiaOS
          */
         static constexpr common::un pagesize = UTOPIAOS_KERNEL_PAGESIZE;
         
+        static_assert( pagesize != 0, "pagesize must not be zero" );
         static_assert( ((pagesize - 1) & pagesize) == 0,
                       "pagesize must be a power of two" );
     }
