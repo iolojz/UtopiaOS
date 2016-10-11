@@ -31,7 +31,8 @@ namespace UtopiaOS
         enum class memory_type : common::uint32
         {
             general_purpose,
-            unusable
+            unusable,
+            invalid
         };
         
         /** \struct memory_request
@@ -87,7 +88,10 @@ namespace UtopiaOS
          * It is guaranteed that
          * (\a start + \a number_of_pages * \a pagesize)
          * does not overflow, where \a start is either
-         * \a physical_start or \a virtual_start
+         * \a physical_start or \a virtual_start.
+         * For memory_descriptor with its type set to
+         * \a memory_type::invalid the contents of the
+         * other fields are undefined.
          */
         struct memory_descriptor
         {
@@ -98,8 +102,29 @@ namespace UtopiaOS
             
             /** \brief Construct a kernel-usable memory
              *         descriptor from a UEFI one.
+             *
+             * \warning If there is an overflow in
+             *          (\a start + \a number_of_pages * \a UEFI::pagesize)
+             *          where \a start is either
+             *          \a physical_start or \a virtual_start
+             *          the memory_type will be set to unusable.
+             * \warning If the total memory block is smaller than
+             *          the kernel pagesize the type will be set
+             *          to invalid and the other fields are undefined.
+             * \warning If the kernel pagesize cannot be used to fully
+             *          cover the memory region, the memory region
+             *          will be truncated accordingly.
              */
-            memory_descriptor( const UEFI::memory_descriptor_v1 &uefi_desc );
+            memory_descriptor( const UEFI::memory_descriptor_v1 &uefi_desc )
+            : type( uefi_desc.type == UEFI::memory_type::EfiConventionalMemory ?
+                   memory_type::general_purpose : memory_type::unusable ),
+            physical_start( uefi_desc.physical_start ),
+            virtual_start( uefi_desc.virtual_start ),
+            number_of_pages( (uefi_desc.number_of_pages * UEFI::pagesize) / pagesize )
+            {
+                if( number_of_pages == 0 )
+                    type = memory_type::invalid;
+            }
             
             /** \brief Checks whether the memory described by
              *         the memory descriptor can be used to
