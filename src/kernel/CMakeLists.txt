@@ -13,7 +13,7 @@ set (CMAKE_CXX_STANDARD_REQUIRED ON)
 set (MODULE_KERNEL_SOURCES kernel_main.cpp)
 
 if (UTOPIAOS_HOSTED)
-  add_library (kernel ${MODULE_KERNEL_SOURCES})
+  add_library (kernel SHARED ${MODULE_KERNEL_SOURCES})
   set_target_properties (kernel PROPERTIES TARGET_TYPE library)
 else ()
   add_executable (kernel ${MODULE_KERNEL_SOURCES})
