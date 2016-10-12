@@ -76,10 +76,11 @@ namespace
         // Now before creating the memory manager, we need to
         // make sure it knows about already occupied memory.
         // We introduce the "occupied memory description": omd
-        void *omd_memory = UTOPIAOS_ALLOCA_WITH_ALIGN( 2 * sizeof(common::memory_region),
+        std::size_t omd_memory_size = 2 * sizeof(common::memory_region);
+        void *omd_memory = UTOPIAOS_ALLOCA_WITH_ALIGN( omd_memory_size,
                                                       alignof(common::memory_region) );
-        std::pmr::monotonic_buffer_resource omd_memory_resource( memmap_memory,
-                                                                memmap_memory_requirement.size );
+        std::pmr::monotonic_buffer_resource omd_memory_resource( omd_memory,
+                                                                omd_memory_size );
         
         using omd_allocator = std::pmr::polymorphic_allocator<common::memory_region>;
         dynarray<common::memory_region, omd_allocator> omd( {kernel_image_region,
