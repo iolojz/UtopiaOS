@@ -14,6 +14,7 @@
 
 #include <algorithm>
 #include <iterator>
+#include <stdexcept>
 
 namespace UtopiaOS
 {
@@ -114,13 +115,47 @@ namespace UtopiaOS
                 }
             }
             
+            /** \brief Construct a dynarray from another one
+             *         by stealing its resources and keeping
+             *         just the first \a length_to_preserve
+             *         objects.
+             * \param[inout] other The dynarray to steal resources from
+             * \param[in] length_to_preserve The number of objects to
+             *            keep.
+             *
+             * If the number of objects to keep is largeer than
+             * the size of the original dynarray, a std::length_error
+             * exception is raised and the original dynarray
+             * is as untouched.
+             */
+            dynarray( dynarray &&other, common::un length_to_preserve )
+            : allocator( std::move( other.allocator ) ),
+            length( length_to_preserve ), buffer( other.buffer )
+            {
+                static_assert( std::is_nothrow_move_constructible<allocator_type>::value,
+                              "allocator_type has to be nothrow move constructible" );
+                
+                if( length > other.length )
+                {
+                    other.allocator.~allocator_type();
+                    new (&(other.allocator)) allocator_type( std::move( allocator ) );
+                    throw std::length_error( "Attempt to construct a dynarray\
+from another dynarray of shorter length than specified." );
+                }
+                
+                other.length = 0;
+                other.buffer = nullptr;
+            }
+            
             ~dynarray( void )
             {
                 std::for_each( begin(), end(), [] ( reference r ) {
                     r.~value_type();
                 } );
-                             
-                allocator.deallocate( buffer, length );
+                
+                // Allow for desctruction of a moved dynarray
+                if( length != 0 )
+                    allocator.deallocate( buffer, length );
             }
         };
     }
