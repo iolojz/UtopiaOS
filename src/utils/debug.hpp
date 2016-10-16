@@ -1,13 +1,13 @@
-/** \ingroup kernel
+/** \ingroup utils
  * \{
  *
- * \file kernel/debug.hpp
+ * \file utils/debug.hpp
  * \brief This file contains simple functions
  *        that can be used for debugging purposes.
  */
 
-#ifndef H_kernel_debug
-#define H_kernel_debug
+#ifndef H_utils_debug
+#define H_utils_debug
 
 #include <target/config.hpp>
 
@@ -15,7 +15,7 @@
 
 namespace UtopiaOS
 {
-    namespace kernel
+    namespace utils
     {
         /** \brief Simple assertion function that only checks
          *         the assertion when the compile-time debug flag

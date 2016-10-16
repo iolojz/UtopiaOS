@@ -1,22 +1,18 @@
-#/** \ingroup kernel
+#/** \ingroup io
 * \{
 *
-* \file kernel/logger.hpp
+* \file io/logger.hpp
 * \brief This file contains a simple logging system.
 */
 
-#ifndef H_kernel_logger
-#define H_kernel_logger
+#ifndef H_io_logger
+#define H_io_logger
 
-#include <common/types.hpp>
-
-#include <atomic>
-
-#include "dynarray.hpp"
+#include "string.hpp"
 
 namespace UtopiaOS
 {
-    namespace kernel
+    namespace io
     {
         /** \class logger
          * \brief This class is an abstract base class used
@@ -33,14 +29,16 @@ namespace UtopiaOS
         class logger
         {
         public:
-            /** \brief Logs several ordered strings */
-            virtual void log( common::un number_of_strings, ... ) = 0;
+            /** \brief Logs several ordered const_stringrefs */
+            virtual void log( unsigned number_of_strings, ... ) = 0;
         };
         
-        /** \brief The global assertion logger object,
-         *         initialized to nullptr!
-         */
-        std::atomic<logger *> assertion_logger( nullptr );
+#if UTOPIAOS_HOSTED
+        struct cout_logger : public logger
+        {
+            virtual void log( unsigned number_of_strings, ... ) override;
+        };
+#endif
         
         /** \brief Print strings to log.
          * \tparam STRINGS Needs to be convertible to const_stringrefs
@@ -54,7 +52,7 @@ namespace UtopiaOS
         {
             if( l != nullptr )
             {
-                l->log( sizeof...(STRINGS), common::const_stringref(strings)... );
+                l->log( sizeof...(STRINGS), io::const_stringref(strings)... );
             }
         }
     }

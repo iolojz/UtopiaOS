@@ -13,8 +13,8 @@
 #ifndef H_environment_environment
 #define H_environment_environment
 
-#include <common/memory.hpp>
-#include "UEFIMemory.hpp"
+#include <target/memory.hpp>
+#include <UEFI/memory.hpp>
 
 namespace UtopiaOS
 {
@@ -26,10 +26,10 @@ namespace UtopiaOS
     {
         /** \brief The memory region where the kernel
          *         binary is loaded */
-        common::memory_region kernel_image_region;
+        target::memory_region kernel_image_region;
         /** \brief The memory region where the kernel
          *         stack is located */
-        common::memory_region kernel_stack_region;
+        target::memory_region kernel_stack_region;
         
         /** \brief The UEFI memory map */
         UEFI::memory_map memmap;

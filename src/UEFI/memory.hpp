@@ -1,16 +1,17 @@
-/** \ingroup environment
+/** \ingroup UEFI
  * \{
  *
- * \file environment/UEFIMemory.hpp
+ * \file UEFI/memory.hpp
  * \brief This file contains basic memory-related
  *        types and constants modelled to be UEFI
  *        compatible.
  */
 
-#ifndef H_environment_memory
-#define H_environment_memory
+#ifndef H_UEFI_memory
+#define H_UEFI_memory
 
-#include <common/types.hpp>
+#include <target/UEFItypes.hpp>
+#include <target/memory.hpp>
 
 #include <iterator>
 
@@ -22,9 +23,26 @@ namespace UtopiaOS
      */
     namespace UEFI
     {
+        /** \typedef un
+         * \brief UEFI native unsigned integer type
+         */
+        using un = target::UEFI::un;
+        
+        /** \typedef uint32
+         * \brief UEFI unsigned integer type
+         *        with exactly 32 usable bits.
+         */
+        using uint32 = target::UEFI::uint32;
+        
+        /** \typedef uint64
+         * \brief Signed integer type
+         *        with exactly 32 usable bits.
+         */
+        using uint64 = target::UEFI::uint64;
+        
         /** \enum memory_type
          * \brief Equivalent to the UEFI type EFI_MEMORY_TYPE */
-        enum class memory_type : common::uint32
+        enum class memory_type : uint32
         {
             EfiReservedMemoryType = 0,
             EfiLoaderCode,
@@ -44,29 +62,29 @@ namespace UtopiaOS
         };
         
         /** \brief A constant holding the UEFI pagesize (4KiB) */
-        static constexpr common::un pagesize = (common::un(1) << 12);
+        static constexpr un pagesize = (un(1) << 12);
         
         /** \typedef physical_address
          * \brief Equivalent to the UEFI type EFI_PHYSICAL_ADDRESS
          */
-        using physical_address = common::uint64;
+        using physical_address = uint64;
         /** \typedef physical_address
          * \brief Equivalent to the UEFI type EFI_VIRTUAL_ADDRESS
          */
-        using virtual_address = common::uint64;
+        using virtual_address = uint64;
         
         /** \name Memory Attribute Definitions 
          * \brief Constants equivalent to the UEFI memory attribute definitions
          * \{ */
-        static constexpr common::uint64 EFI_MEMORY_UC      = (common::uint64(1) <<  0);
-        static constexpr common::uint64 EFI_MEMORY_WC      = (common::uint64(1) <<  1);
-        static constexpr common::uint64 EFI_MEMORY_WT      = (common::uint64(1) <<  2);
-        static constexpr common::uint64 EFI_MEMORY_WB      = (common::uint64(1) <<  3);
-        static constexpr common::uint64 EFI_MEMORY_UCE     = (common::uint64(1) <<  4);
-        static constexpr common::uint64 EFI_MEMORY_WP      = (common::uint64(1) << 12);
-        static constexpr common::uint64 EFI_MEMORY_RP      = (common::uint64(1) << 13);
-        static constexpr common::uint64 EFI_MEMORY_XP      = (common::uint64(1) << 14);
-        static constexpr common::uint64 EFI_MEMORY_RUNTIME = (common::uint64(1) << 63);
+        static constexpr uint64 EFI_MEMORY_UC      = (uint64(1) <<  0);
+        static constexpr uint64 EFI_MEMORY_WC      = (uint64(1) <<  1);
+        static constexpr uint64 EFI_MEMORY_WT      = (uint64(1) <<  2);
+        static constexpr uint64 EFI_MEMORY_WB      = (uint64(1) <<  3);
+        static constexpr uint64 EFI_MEMORY_UCE     = (uint64(1) <<  4);
+        static constexpr uint64 EFI_MEMORY_WP      = (uint64(1) << 12);
+        static constexpr uint64 EFI_MEMORY_RP      = (uint64(1) << 13);
+        static constexpr uint64 EFI_MEMORY_XP      = (uint64(1) << 14);
+        static constexpr uint64 EFI_MEMORY_RUNTIME = (uint64(1) << 63);
         /** \} */
         
         /** \struct memory_descriptor_v1
@@ -79,9 +97,11 @@ namespace UtopiaOS
             memory_type type;
             physical_address physical_start; /**< 4KiB aligned! */
             virtual_address virtual_start; /**< 4KiB aligned! */
-            common::uint64 number_of_pages; /**< number of 4KiB pages */
-            common::uint64 attribute;
+            uint64 number_of_pages; /**< number of 4KiB pages */
+            uint64 attribute;
         };
+        
+        class memory_map;
         
         /** \class const_memory_map_iterator_v1
          * \brief An iterator class that can be used to
@@ -95,7 +115,7 @@ namespace UtopiaOS
         class const_memory_map_iterator_v1
         {
         public:
-            friend class memory_map;
+            friend class UEFI::memory_map;
             
             /** \name Iterator Traits
              * \{ */
@@ -103,20 +123,20 @@ namespace UtopiaOS
             using value_type = const memory_descriptor_v1;
             using reference = const memory_descriptor_v1 &;
             using pointer = const memory_descriptor_v1 *;
-            using difference_type = common::sn;
+            using difference_type = std::make_signed<un>::type;
             /** \} */
             
             pointer descriptor; /**< The current memory descriptor */
-            common::un descriptor_size; /**< The real size of the memory descriptor */
-            
+            un descriptor_size; /**< The real size of the memory descriptor */
         private:
             /** \brief Construct an iterator from data supplied by a UEFI memory map */
-            const_memory_map_iterator_v1( void *d, common::un s )
+            const_memory_map_iterator_v1( void *d, un s )
             : descriptor( reinterpret_cast<pointer>( d ) ), descriptor_size( s ) {}
         public:
             const_memory_map_iterator_v1 &operator++( void )
             {
-                descriptor = common::uintptr_to_ptr<value_type>( common::ptr_to_uintptr( descriptor ) + descriptor_size );
+                descriptor = target::uintptr_to_ptr<value_type>(
+                                    target::ptr_to_uintptr( descriptor ) + descriptor_size );
                 return *this;
             }
             const_memory_map_iterator_v1 operator++( int )
@@ -124,13 +144,14 @@ namespace UtopiaOS
             
             const_memory_map_iterator_v1 &operator--( void )
             {
-                descriptor = common::uintptr_to_ptr<value_type>( common::ptr_to_uintptr( descriptor ) - descriptor_size );
+                descriptor = target::uintptr_to_ptr<value_type>(
+                                    target::ptr_to_uintptr( descriptor ) - descriptor_size );
                 return *this;
             }
             const_memory_map_iterator_v1 operator--( int )
             { const_memory_map_iterator_v1 cp( *this ); --(*this); return cp; }
             
-            value_type &operator*( void ) const { return *descriptor; }
+            reference operator*( void ) const { return *descriptor; }
             pointer operator->( void ) const { return descriptor; }
             
             bool operator==( const const_memory_map_iterator_v1 &it ) const
@@ -149,7 +170,8 @@ namespace UtopiaOS
             
             const_memory_map_iterator_v1 &operator+=( difference_type n )
             {
-                descriptor = common::uintptr_to_ptr<value_type>( common::ptr_to_uintptr( descriptor ) + n * descriptor_size );
+                descriptor = target::uintptr_to_ptr<value_type>(
+                                target::ptr_to_uintptr( descriptor ) + n * descriptor_size );
                 return *this;
             }
             const_memory_map_iterator_v1 operator+( difference_type n ) const
@@ -157,7 +179,8 @@ namespace UtopiaOS
             
             const_memory_map_iterator_v1 &operator-=( difference_type n )
             {
-                descriptor = common::uintptr_to_ptr<value_type>( common::ptr_to_uintptr( descriptor ) - n * descriptor_size );
+                descriptor = target::uintptr_to_ptr<value_type>(
+                                target::ptr_to_uintptr( descriptor ) - n * descriptor_size );
                 return *this;
             }
             const_memory_map_iterator_v1 operator-( difference_type n ) const
@@ -165,11 +188,15 @@ namespace UtopiaOS
             
             difference_type operator-( const_memory_map_iterator_v1 it ) const
             {
-                return (common::ptr_to_uintptr( descriptor ) - common::ptr_to_uintptr( it.descriptor ) / descriptor_size);
+                return (target::ptr_to_uintptr( descriptor ) -
+                        target::ptr_to_uintptr( it.descriptor )) / descriptor_size;
             }
             
             reference operator[]( difference_type n ) const
-            { return *common::uintptr_to_ptr<value_type>( common::ptr_to_uintptr( descriptor ) + n * descriptor_size ); }
+            {
+                return *target::uintptr_to_ptr<value_type>(
+                        target::ptr_to_uintptr( descriptor ) + n * descriptor_size );
+            }
         };
         
         /** \struct memory_map
@@ -181,9 +208,9 @@ namespace UtopiaOS
         struct memory_map
         {
             void *descriptors; /**< The descriptors (deliberately untyped) */
-            common::un number_of_descriptors;
-            common::un descriptor_size;
-            common::uint32 descriptor_version;
+            un number_of_descriptors;
+            un descriptor_size;
+            uint32 descriptor_version;
             
             /** \typedef const_iterator_v1
              * \brief Iterator to traverse memory map as if
@@ -193,8 +220,10 @@ namespace UtopiaOS
             
             /** \name v1 traversal functions
              * \{ */
-            const_iterator_v1 cbegin_v1( void ) const { return const_iterator_v1( descriptors, descriptor_size ); }
-            const_iterator_v1 cend_v1( void ) const { return (const_iterator_v1( descriptors, descriptor_size ) += number_of_descriptors); }
+            const_iterator_v1 cbegin_v1( void ) const
+            { return const_iterator_v1( descriptors, descriptor_size ); }
+            const_iterator_v1 cend_v1( void ) const
+            { return (const_iterator_v1( descriptors, descriptor_size ) += number_of_descriptors); }
             /* \} */
         };
     }

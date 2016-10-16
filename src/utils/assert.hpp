@@ -1,20 +1,25 @@
-/** \ingroup kernel
+/** \ingroup utils
  * \{
  *
- * \file kernel/assert.hpp
+ * \file utils/assert.hpp
  * \brief This file defines a simple runtime
  *        assertion API.
  */
 
-#ifndef H_kernel_assert
-#define H_kernel_assert
+#ifndef H_utils_assert
+#define H_utils_assert
 
-#include "logger.hpp"
+#include <target/config.hpp>
+
+#include <io/logger.hpp>
+
+#include <utility>
+
 #include "trap.hpp"
 
 namespace UtopiaOS
 {
-    namespace kernel
+    namespace utils
     {
         /** \brief Simple assertion function.
          * \tparam STRING Some \a logger compatible string type
@@ -27,8 +32,12 @@ namespace UtopiaOS
         {
             if( assertion == false )
             {
-                log( assertion_logger, "Assertion failed: ",
-                    std::forward<STRING>( error_message ) );
+#if UTOPIAOS_HOSTED
+                io::log( nullptr, "Assertion failed: ",
+                        std::forward<STRING>( error_message ) );
+#else
+#warning "No hosted environment. Failed assertions will not produce error messages."
+#endif
                 trap();
             }
         }

@@ -33,12 +33,19 @@
  *        that is automatically freed upon the end of the current
  *        block.
  * \param[in] size The size of the requested memory block
- * \param[in] alignment The alignment of the requested memory block
+ * \param[in] alignment The compiletime-constant alignment
+ *            of the requested memory block
  * \return A void * pointing to the newly allocated memory block
  *
  * \warning \a alignment has to be a power of two!
  */
 #define UTOPIAOS_ALLOCA_WITH_ALIGN( size, alignment ) __builtin_alloca_with_align( (size), (alignment) )
+
+#define UTOPIAOS_UEFI_UN unsigned long
+#define UTOPIAOS_UEFI_UINT32 unsigned int
+#define UTOPIAOS_UEFI_UINT64 unsigned long
+
+#define UTOPIAOS_HOSTED 1
 
 #endif /* H_common_target_headers */
 

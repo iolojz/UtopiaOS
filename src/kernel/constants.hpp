@@ -13,8 +13,6 @@
 
 #include <target/config.hpp>
 
-#include <common/types.hpp>
-
 namespace UtopiaOS
 {
     namespace kernel
@@ -22,7 +20,7 @@ namespace UtopiaOS
         /* \brief The pagesize used by the kernel, which
          *        has to be a power of two!
          */
-        static constexpr common::un pagesize = UTOPIAOS_KERNEL_PAGESIZE;
+        static constexpr unsigned pagesize = UTOPIAOS_KERNEL_PAGESIZE;
         
         static_assert( pagesize != 0, "pagesize must not be zero" );
         static_assert( ((pagesize - 1) & pagesize) == 0,

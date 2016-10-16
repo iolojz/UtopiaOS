@@ -1,19 +1,19 @@
-#/** \ingroup kernel
+#/** \ingroup utils
 * \{
 *
-* \file kernel/trap.hpp
+* \file utils/trap.hpp
 * \brief This file defines a function that causes
 *        the thread of execution to stop immediately.
 */
 
-#ifndef H_kernel_trap
-#define H_kernel_trap
+#ifndef H_utils_trap
+#define H_utils_trap
 
 #include <target/config.hpp>
 
 namespace UtopiaOS
 {
-    namespace kernel
+    namespace utils
     {
         /** \brief Causes an immediate halt of the current
          *        thread of execution.

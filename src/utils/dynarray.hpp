@@ -1,16 +1,14 @@
-/** \ingroup kernel
+/** \ingroup utils
  * \{
  *
- * \file kernel/dynarray.hpp
+ * \file utils/dynarray.hpp
  * \brief This file contains a simple dynarray
  *        implementation similar to the rejected
  *        c++14 proposal.
  */
 
-#ifndef H_kernel_dynarray
-#define H_kernel_dynarray
-
-#include <common/types.hpp>
+#ifndef H_utils_dynarray
+#define H_utils_dynarray
 
 #include <algorithm>
 #include <iterator>
@@ -18,7 +16,7 @@
 
 namespace UtopiaOS
 {
-    namespace kernel
+    namespace utils
     {
         /** \class dynarray
          * \brief A dynarray is like the ordinary std::array
@@ -34,8 +32,8 @@ namespace UtopiaOS
         public:
             using allocator_type = Allocator;
             using value_type = T;
-            using size_type = common::un;
-            using difference_type = common::sn;
+            using size_type = std::size_t;
+            using difference_type = std::make_signed<size_type>::type;
             using reference = T &;
             using const_reference = const T &;
             using pointer = T *;
@@ -128,7 +126,7 @@ namespace UtopiaOS
              * exception is raised and the original dynarray
              * is as untouched.
              */
-            dynarray( dynarray &&other, common::un length_to_preserve )
+            dynarray( dynarray &&other, size_type length_to_preserve )
             : allocator( std::move( other.allocator ) ),
             length( length_to_preserve ), buffer( other.buffer )
             {

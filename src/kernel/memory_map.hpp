@@ -9,10 +9,9 @@
 #ifndef H_kernel_memory
 #define H_kernel_memory
 
-#include <common/types.hpp>
+#include <utils/dynarray.hpp>
+#include <utils/debug.hpp>
 
-#include "dynarray.hpp"
-#include "debug.hpp"
 #include "constants.hpp"
 
 #include <memory_resource>
@@ -29,57 +28,12 @@ namespace UtopiaOS
          *        but contains only types the kernel
          *        actually knows about.
          */
-        enum class memory_type : common::uint32
+        enum class memory_type : std::uint32_t
         {
             general_purpose,
             unusable,
             invalid
         };
-        
-        /** \struct memory_request
-         * \brief Encapsulates a memory requirement
-         * \tparam ALIGN Specifies the alignment
-         */
-        template<std::size_t ALIGN>
-        struct memory_request
-        {
-            std::size_t size;
-            static constexpr std::size_t alignment = ALIGN;
-        };
-        
-        /** \brief Aligns a pointer to a given alignment.
-         * \param[in] ptr The pointer to align
-         * \param[in] alignment The alignment to meet
-         * \returns An aligned pointer or 0 if the pointer
-         *          could not be aligned.
-         *
-         * The aligned pointer is guaranteed to point to
-         * an address not smaller than the original pointer.
-         * It is guaranteed that there is no other aligned
-         * address in the range [\a ptr, \a return-value].
-         * If the pointer cannot be aligned, i.e it points
-         * to an address so large that the next aligned
-         * address would not fit into the data type,
-         * 0 is returned.
-         *
-         * \warning If \a alignment is not a power of two,
-         *          the behaviour is undefined!
-         */
-        static inline common::uintptr align( common::uintptr ptr, std::size_t alignment )
-        {
-            static_assert( std::numeric_limits<common::uintptr>::max() >=
-                          std::numeric_limits<std::size_t>::max(),
-                          "This implementation cannot guarantee to work." );
-            debug_assert( (alignment % 2) == 0, "alignment has to be a power of two" );
-            
-            common::un mask = alignment - 1; // ...0000011111...
-            common::un diff = (ptr & mask);
-            
-            if( diff == 0 )
-                return ptr;
-            
-            return (ptr + alignment - diff);
-        }
         
         /** \struct memory_descriptor
          * \brief Analogous to a UEFI memory descriptor,
@@ -98,9 +52,9 @@ namespace UtopiaOS
         struct memory_descriptor
         {
             memory_type type;
-            common::uint64 physical_start;
-            common::uint64 virtual_start;
-            common::uint64 number_of_pages;
+            std::uintptr_t physical_start;
+            std::uintptr_t virtual_start;
+            std::size_t number_of_pages;
             
             /** \brief Returns an invalid memory descriptor.
              * \returns An invalid memory descriptor
@@ -122,8 +76,8 @@ namespace UtopiaOS
              * required of a memory_descriptor object, a
              * std::invalid_argument exception is thrown.
              */
-            memory_descriptor( memory_type t, common::uint64 ps,
-                              common::uint64 vs, common::uint64 np )
+            memory_descriptor( memory_type t, std::uintptr_t ps,
+                              std::uintptr_t vs, std::size_t np )
             : type( t ), physical_start( ps ), virtual_start( vs ),
             number_of_pages( np )
             {
@@ -154,60 +108,32 @@ valid memory descriptor with the specified arguments" );
             : type( uefi_desc.type == UEFI::memory_type::EfiConventionalMemory ?
                    memory_type::general_purpose : memory_type::unusable ),
             physical_start( uefi_desc.physical_start ),
-            virtual_start( uefi_desc.virtual_start )
+            virtual_start( uefi_desc.virtual_start ),
+            number_of_pages( (uefi_desc.number_of_pages * UEFI::pagesize) /
+                               pagesize )
             {
-                // Check if memory block size already overflows
-                if( (std::numeric_limits<common::uint64>::max() /
-                     UEFI::pagesize ) > uefi_desc.number_of_pages )
+                static_assert( std::numeric_limits<std::uintptr_t>::max() >=
+                              std::numeric_limits<UEFI::uint64>::max(),
+                              "This implementation cannot guarantee to work." );
+                static_assert( std::numeric_limits<std::size_t>::max() >=
+                              std::numeric_limits<UEFI::uint64>::max(),
+                              "This implementation cannot guarantee to work." );
+                
+                if( validate( *this ) == false )
                     type = memory_type::invalid;
-                // Check if the block starting at physical_address
-                // overflows
-                else if( (std::numeric_limits<common::uint64>::max() -
-                          UEFI::pagesize * uefi_desc.number_of_pages) <
-                        physical_start )
-                    type = memory_type::invalid;
-                // Check if the block starting at virtual_address
-                // overflows
-                else if( (std::numeric_limits<common::uint64>::max() -
-                          UEFI::pagesize * uefi_desc.number_of_pages) <
-                        virtual_start )
-                    type = memory_type::invalid;
-                else
-                {
-                    // Truncate the memory block as needed by pagesize
-                    // limitations.
-                    number_of_pages = ((uefi_desc.number_of_pages * UEFI::pagesize) /
-                                       pagesize );
-                    
-                    // Don't retain zero-sized memory blocks
-                    if( number_of_pages == 0 )
-                        type = memory_type::invalid;
-                }
             }
             
-            /** \brief Checks whether the memory described by
-             *         the memory descriptor can be used to
-             *         fulfil a memory request.
-             * \tparam ALIGN Specifies the alignment
-             * \returns \a true if the request can be fulfilled
-             *          and \a false otherwise.
+            /** \brief Checks whether the given memory region is
+             *         contained in the memory described by the
+             *         descriptor.
+             * \param[in] region The memory region
+             * \returns \a true if it is contained, false otherwise
              */
-            template<std::size_t ALIGN>
-            bool can_meet_request( const memory_request<ALIGN> &request ) const
+            bool contains_memory_region( const target::memory_region &region ) const
             {
-                static_assert( std::numeric_limits<common::uintptr>::max() >=
-                              std::numeric_limits<std::size_t>::max(),
-                              "This implementation cannot guarantee to work." );
-                if( type != memory_type::general_purpose )
-                    return false;
-                
-                auto aligned_address = align( virtual_start, request.alignment );
-                common::uintptr request_end = aligned_address + request.size;
-                
-                if( (request_end - virtual_start) / pagesize <= number_of_pages )
-                    return true;
-                
-                return false;
+                /** \todo static_assert interger requirements */
+                return (region.base() >= virtual_start &&
+                        region.top() <= virtual_start + pagesize * number_of_pages);
             }
             
             /** \brief Checks whether the memory descriptor
@@ -226,22 +152,24 @@ valid memory descriptor with the specified arguments" );
             static bool validate( const memory_descriptor &md )
             {
                 // Check if memory block size already overflows
-                if( (std::numeric_limits<common::uint64>::max() /
-                     pagesize ) > md.number_of_pages )
+                if( (std::numeric_limits<std::uintptr_t>::max() /
+                     pagesize ) < md.number_of_pages )
                     return false;
                 // Check if the block starting at physical_address
                 // overflows
-                if( (std::numeric_limits<common::uint64>::max() -
+                if( (std::numeric_limits<std::uintptr_t>::max() -
                     pagesize * md.number_of_pages) < md.physical_start )
                     return false;
                 // Check if the block starting at virtual_address
                 // overflows
-                if( (std::numeric_limits<common::uint64>::max() -
+                if( (std::numeric_limits<std::uintptr_t>::max() -
                     pagesize * md.number_of_pages) < md.virtual_start )
                     return false;
                 // Do not retain zero sized memory regions
                 if( md.number_of_pages == 0 )
                     return false;
+                
+                return true;
             }
         };
         
@@ -253,6 +181,8 @@ valid memory descriptor with the specified arguments" );
          * - fixed size of descriptors that is known compile-time
          * - overlapping ranges are merged if possible
          *   and removed otherwise
+         * - The descriptors are sorted by virtual_start in
+         *   ascending order
          */
         template<class Allocator>
         class memory_map
@@ -260,7 +190,7 @@ valid memory descriptor with the specified arguments" );
         public:
             using allocator_type = Allocator;
         private:
-            using desc_array = dynarray<memory_descriptor, allocator_type>;
+            using desc_array = utils::dynarray<memory_descriptor, allocator_type>;
             desc_array descriptors;
             
             /** \brief Checks whether the memory regions
@@ -276,7 +206,7 @@ valid memory descriptor with the specified arguments" );
             static bool have_overlap( const memory_descriptor &md1,
                         const memory_descriptor &md2 )
             {
-                debug_assert( md1.virtual_start <= md2.virtual_start,
+                utils::debug_assert( md1.virtual_start <= md2.virtual_start,
                              "md1 does not preceede md2!" );
                 
                 auto end1 = md1.virtual_start + pagesize * md1.number_of_pages;
@@ -301,9 +231,9 @@ valid memory descriptor with the specified arguments" );
             static memory_descriptor merge_with_overlap( const memory_descriptor &md1,
                                                        const memory_descriptor &md2 )
             {
-                debug_assert( md1.virtual_start <= md2.virtual_start,
+                utils::debug_assert( md1.virtual_start <= md2.virtual_start,
                              "md1 does not preceede md2!" );
-                debug_assert( have_overlap( md1, md2 ),
+                utils::debug_assert( have_overlap( md1, md2 ),
                              "md1 and md2 do not overlap" );
                 
                 if( md1.type != md2.type )
@@ -350,7 +280,7 @@ valid memory descriptor with the specified arguments" );
             static bool are_adjacent_and_mergable( const memory_descriptor &md1,
                                                   const memory_descriptor &md2 )
             {
-                debug_assert( md1.virtual_start <= md2.virtual_start,
+                utils::debug_assert( md1.virtual_start <= md2.virtual_start,
                              "md1 does not preceede md2!" );
                 
                 if( md1.type != md2.type )
@@ -380,9 +310,9 @@ valid memory descriptor with the specified arguments" );
             static memory_descriptor merge_adjacent( const memory_descriptor &md1,
                                                     const memory_descriptor &md2 )
             {
-                debug_assert( md1.virtual_start <= md2.virtual_start,
+                utils::debug_assert( md1.virtual_start <= md2.virtual_start,
                              "md1 does not preceede md2!" );
-                debug_assert( are_adjacent_and_mergable( md1, md2 ),
+                utils::debug_assert( are_adjacent_and_mergable( md1, md2 ),
                              "md1 and md2 are not adjacent!" );
                 
                 auto end = (md2.virtual_start +
@@ -453,7 +383,7 @@ valid memory descriptor with the specified arguments" );
              * \param[in] uefi_map The UEFI memory map
              * \returns The memory_request
              */
-            static memory_request<alignof(memory_descriptor)>
+            static target::memory_request<alignof(memory_descriptor)>
             maximum_conversion_requirement( const UEFI::memory_map &uefi_map )
             {
                 return { uefi_map.number_of_descriptors * sizeof(memory_descriptor) };
@@ -463,7 +393,7 @@ valid memory descriptor with the specified arguments" );
              *         will suffice to copy the memory map.
              * \returns The memory_request
              */
-            memory_request<alignof(memory_descriptor)> copy_requirement( void ) const
+            target::memory_request<alignof(memory_descriptor)> maximum_copy_requirement( void ) const
             {
                 return { descriptors.size() * sizeof(memory_descriptor) };
             }
@@ -479,6 +409,11 @@ valid memory descriptor with the specified arguments" );
             memory_map( const UEFI::memory_map &uefi_map, allocator_type &&alloc )
             : descriptors( convert_from_uefi( uefi_map,
                                              std::forward<allocator_type>( alloc ) ) )
+            {}
+            
+            template<class OtherAllocator>
+            memory_map( const memory_map<OtherAllocator> &other, allocator_type &&alloc )
+            : descriptors( other.cbegin(), other.cend(), std::forward<allocator_type>( alloc ) )
             {}
             
             /** \brief Returns a const iterator to the begin of
