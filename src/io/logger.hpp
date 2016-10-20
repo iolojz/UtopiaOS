@@ -34,6 +34,11 @@ namespace UtopiaOS
         };
         
 #if UTOPIAOS_HOSTED
+        /** \struct cout_logger
+         * \brief This is a simple class that forwards
+         *        all logging to std::cout in a non-synchronized
+         *        way.
+         */
         struct cout_logger : public logger
         {
             virtual void log( unsigned number_of_strings, ... ) override;

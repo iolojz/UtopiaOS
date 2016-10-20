@@ -1,20 +1,29 @@
 #/** \ingroup utils
 * \{
 *
-* \file utils/ranges.hepp
+* \file utils/ranges.hpp
 * \brief This file defines template functions
-*        that manipulate ranges.
+*        that manipulate iterator ranges.
 */
 
 #ifndef H_utils_ranges
 #define H_utils_ranges
 
 #include <algorithm>
+#include <type_traits>
 
 namespace UtopiaOS
 {
     namespace utils
     {
+        /** \class insertion_iterator
+         * \brief An iterator class wrapping a given
+         *        iterator range and an arbitrarily
+         *        inserted reference in a new
+         *        iterator class.
+         * \tparam InputIterator The wrapped iterator class.
+         *                       Has to be an input iterator.
+         */
         template<class InputIterator>
         class insertion_iterator
         {
@@ -27,18 +36,30 @@ namespace UtopiaOS
             using pointer = typename std::iterator_traits<InputIterator>::pointer;
             using difference_type = typename std::iterator_traits<InputIterator>::difference_type;
             /** \} */
+            
+            static constexpr bool isInput = std::is_base_of<std::input_iterator_tag,
+                iterator_category
+            >::value;
+            
+            static_assert( isInput, "Only input iterators are supported" );
         private:
             enum class region : signed
             {
                 lower = -1,
                 insertion = 0,
                 upper = 1
-            } current_region;
+            } current_region; /**< Represents the current location of the iterator. */
             
-            InputIterator real_it;
-            InputIterator end1;
-            pointer inserted_element;
+            InputIterator real_it; /**< The real iterator object */
+            InputIterator end1; /**< The position of the inserted element */
+            pointer inserted_element; /**< A pointer to the inserted element */
         public:
+            /** \brief Construct an insertion iterator
+             * \param[in] it An interator representing to the current position
+             * \param[in] e1 An iterator representing the location of the
+             *               inserted element.
+             * \param[in] iel A reference to the inserted element
+             */
             insertion_iterator( InputIterator it, InputIterator e1, reference iel )
             : current_region( (it < e1) ? region::lower : region::upper ),
             real_it( it ), end1( e1 ), inserted_element( &iel ) {}
@@ -130,11 +151,6 @@ namespace UtopiaOS
             
             insertion_iterator &operator+=( difference_type n )
             {
-                static_assert( std::is_same<iterator_category,
-                              std::random_access_iterator_tag>::value,
-                              "template type parameter InputIterator is not a \
-random access iterator" );
-                
                 if( n < 0 )
                     return (*this -= -n);
                 
@@ -174,11 +190,6 @@ random access iterator" );
             
             insertion_iterator &operator-=( difference_type n )
             {
-                static_assert( std::is_same<iterator_category,
-                              std::random_access_iterator_tag>::value,
-                              "template type parameter InputIterator is not a \
-random access iterator" );
-                
                 if( n < 0 )
                     return (*this += -n);
                 
@@ -218,11 +229,6 @@ random access iterator" );
             
             difference_type operator-( insertion_iterator it ) const
             {
-                static_assert( std::is_same<iterator_category,
-                              std::random_access_iterator_tag>::value,
-                              "template type parameter InputIterator is not a \
-random access iterator" );
-                
                 switch( current_region )
                 {
                     case region::lower:
@@ -243,37 +249,57 @@ random access iterator" );
             
             reference operator[]( difference_type n ) const
             {
-                static_assert( std::is_same<iterator_category,
-                              std::random_access_iterator_tag>::value,
-                              "template type parameter InputIterator is not a \
-random access iterator" );
-                
                 return *(*this + n);
             }
         };
         
+        /** \brief Construct an iterator range by inserting
+         *         an extra reference element into a range
+         *         at a given position.
+         * \tparam InputIterator The iterator type
+         * \tparam T The reference type
+         * \param[in] begin The begin of the iterator range
+         * \param[in] end1 The location at which the reference
+         *                 should be inserted.
+         * \param[in] ref  The reference to be inserted
+         * \param[in] end2 The end of the iterator range
+         */
         template<class InputIterator, class T>
         auto range_by_inserting_reference( InputIterator begin,
                                         InputIterator end1,
-                                        T &&value,
+                                        T &&ref,
                                         InputIterator end2 )
         {
             using iterator = insertion_iterator<InputIterator>;
-            return std::make_pair( iterator( begin, end1, std::forward<T>( value ) ),
-                                  iterator( end2, end1, std::forward<T>( value ) ) );
+            return std::make_pair( iterator( begin, end1, std::forward<T>( ref ) ),
+                                  iterator( end2, end1, std::forward<T>( ref ) ) );
         }
         
+        /** \brief Construct an iterator range by inserting
+         *         an extra reference element into a
+         *         sorted range.
+         * \tparam InputIterator The iterator type
+         * \tparam T The reference type
+         * \param[in] begin The begin of the iterator range
+         * \param[in] end The end of the iterator range
+         * \param[in] ref The reference to be inserted
+         *
+         * The input range has to be sorted.
+         */
         template<class InputIterator, class T>
         auto sorted_range_insert_reference( InputIterator begin,
                                            InputIterator end,
-                                           T &&value )
+                                           T &&ref )
         {
+            debug_assert( std::is_sorted( begin, end ),
+                         "The input range has to be sorted." );
+            
             using value_type = typename std::iterator_traits<InputIterator>::value_type;
-            auto larger = std::find_if( begin, end, [&value] ( const value_type &compare ) {
-                return !(compare < value_type( value ));
+            auto larger = std::find_if( begin, end, [&ref] ( const value_type &compare ) {
+                return !(compare < value_type( ref ));
             } );
             
-            return range_by_inserting_reference( begin, larger, std::forward<T>( value ), end );
+            return range_by_inserting_reference( begin, larger, std::forward<T>( ref ), end );
         }
     }
 }

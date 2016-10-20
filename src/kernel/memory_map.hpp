@@ -325,7 +325,7 @@ valid memory descriptor with the specified arguments" );
             /** \brief Convert a uefi memory map to a
              *         kernel-usable one.
              * \param[in] uefi_map The UEFI memory map
-             * \param[in] The allocator to use
+             * \param[in] alloc The allocator to use
              * \returns An array of descriptors with the guarantee
              *          that they do not overlap.
              */

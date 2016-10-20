@@ -15,7 +15,8 @@ namespace UtopiaOS
     class environment;
     
     /** \namespace UtopiaOS::kernel
-     * \brief This namespace contains everything kernel-related
+     * \brief Everything in the module Kernel goes
+     *        into this namespace.
      */
     namespace kernel
     {

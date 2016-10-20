@@ -90,8 +90,8 @@ namespace UtopiaOS
         };
         
         /** \brief Aligns a pointer to a given alignment.
+         * \tparam ALIGN The alignment to meet
          * \param[in] ptr The pointer to align
-         * \param[in] alignment The alignment to meet
          * \returns An aligned pointer or 0 if the pointer
          *          could not be aligned.
          *

@@ -1,7 +1,8 @@
-/** \ingroup io
+/** \defgroup io IO
+ * \brief This module contains io-related constructions.
  * \{
  *
- * \file string/string.hpp
+ * \file io/string.hpp
  * \brief This file contains the definitions
  *        of text-related types used throughout
  *        the OS.
@@ -12,6 +13,10 @@
 
 namespace UtopiaOS
 {
+    /** \namespace UtopiaOS::io
+     * \brief Everything in the module IO module
+     *        goes into this namespace.
+     */
     namespace io
     {
         /** \typedef stringref

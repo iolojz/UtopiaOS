@@ -41,10 +41,21 @@
  */
 #define UTOPIAOS_ALLOCA_WITH_ALIGN( size, alignment ) __builtin_alloca_with_align( (size), (alignment) )
 
+/** \name UEFI compatible types
+ * \todo These should be automatically generated
+ *       by Cmake or a configure script.
+ * \{ */
 #define UTOPIAOS_UEFI_UN unsigned long
 #define UTOPIAOS_UEFI_UINT32 unsigned int
 #define UTOPIAOS_UEFI_UINT64 unsigned long
+/** \} */
 
+/** \def UTOPIAOS_HOSTED
+ * \brief Specifies whether to build a hosted
+ *        variant of the OS.
+ * \todo This should be set automatically
+ *       by CMake.
+ */
 #define UTOPIAOS_HOSTED 1
 
 #endif /* H_common_target_headers */

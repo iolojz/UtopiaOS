@@ -23,9 +23,10 @@ namespace UtopiaOS
          *        but its length is fixed upon construction
          *        and not compile-time.
          * \tparam T The value type of the dynarray object
-         * \tparam Allocator the allocator type
+         * \tparam Allocator The allocator type
          *
-         * \warning 
+         * For simplicity only copy-constructible allocators
+         * are supported.
          */
         template<class T, class Allocator> class dynarray
         {
@@ -78,8 +79,10 @@ namespace UtopiaOS
             dynarray &operator=( const dynarray & ) = delete;
             dynarray &operator=( dynarray && ) = delete;
             
-            dynarray( std::initializer_list<value_type> init, allocator_type &&alloc )
-            : dynarray( init.begin(), init.end(), alloc ) {}
+            template<class SomeAllocator>
+            dynarray( std::initializer_list<value_type> init, SomeAllocator &&alloc )
+            : dynarray( init.begin(), init.end(), std::forward<SomeAllocator>( alloc ) )
+            {}
             
             template<class RandomAccessIterator>
             dynarray( RandomAccessIterator first, RandomAccessIterator last,

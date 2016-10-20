@@ -11,12 +11,15 @@
 #include <environment/environment.hpp>
 #include <utils/trap.hpp>
 #include <utils/assert.hpp>
+#include <utils/array.hpp>
 
 #include <new>
+#include <boost/hana.hpp>
 
 #include "memory_manager.hpp"
 
 using namespace UtopiaOS;
+namespace hana = boost::hana;
 
 /** \brief Effectively disable dynamic memory management
  *         by always throwing a std::bad_alloc exception
@@ -96,21 +99,12 @@ namespace
         
         kernel_memory_map memmap( UEFI_memmap, &memmap_memory_resource );
         
-        // Now before creating the memory manager, we need to
-        // make sure it knows about already occupied memory.
-        // We introduce the "occupied memory description": omd
-        std::size_t omd_memory_size = 2 * sizeof(target::memory_region);
-        void *omd_memory = UTOPIAOS_ALLOCA_WITH_ALIGN( omd_memory_size,
-                                                      alignof(target::memory_region) );
-        std::pmr::monotonic_buffer_resource omd_memory_resource( omd_memory,
-                                                                omd_memory_size );
+        /** \todo Mark the space occupied by env as occupied */
         
-        using omd_allocator = std::pmr::polymorphic_allocator<target::memory_region>;
-        utils::dynarray<target::memory_region, omd_allocator> omd( {kernel_image_region,
-            kernel_stack_region}, &omd_memory_resource );
+        auto omd = std::array<target::memory_region, 2>{ kernel_image_region, kernel_stack_region };
         std::sort( omd.begin(), omd.end() );
         
-        return unsynchronized_memory_manager( std::move( memmap ), omd.begin(), omd.end() );
+        return unsynchronized_memory_manager( memmap, omd.cbegin(), omd.cend() );
     }
 }
 

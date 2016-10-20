@@ -3,6 +3,9 @@ cmake_minimum_required (VERSION 3.3)
 
 project (UtopiaOS VERSION 0.1)
 
+find_package (Boost 1.6 REQUIRED)
+include_directories (SYSTEM ${Boost_INCLUDE_DIRS})
+
 if (${CMAKE_CROSSCOMPILING})
   set (UTOPIAOS_HOSTED NO)
 else ()

@@ -18,7 +18,7 @@ namespace UtopiaOS
     namespace kernel
     {
         /* \brief The pagesize used by the kernel, which
-         *        has to be a power of two!
+         *        has to be unzero and a power of two!
          */
         static constexpr unsigned pagesize = UTOPIAOS_KERNEL_PAGESIZE;
         
