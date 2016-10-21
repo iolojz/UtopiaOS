@@ -506,10 +506,10 @@ namespace UtopiaOS
                           buffer_allocator &&alloc )
             {
                 target::memory_region av_regions[max_av_regions];
+                target::memory_region *current = av_regions;
                 
-                std::size_t index = 0;
-                auto assign = [&] ( const auto &region ) {
-                    av_regions[index++] = region;
+                auto assign = [&current] ( const auto &region ) {
+                    *current++ = region;
                 };
                 
                 transform_avm( memmap, omd_begin, omd_end, assign );
