@@ -69,10 +69,10 @@ namespace UtopiaOS
                 insertion_iterator( void ) {}
                 
                 /** \brief Construct an insertion iterator
-                 * \param[in] it An interator representing to the current position
-                 * \param[in] e1 An iterator representing the location of the
-                 *               inserted element.
+                 * \param[in] e1 An iterator representing the insert location
                  * \param[in] iel A reference to the inserted element
+                 * \param[in] r The current region of the iterator
+                 * \param[in] current The iterator position of the real iterator
                  */
                 insertion_iterator( InputIterator e1, reference iel,
                                    region r, InputIterator current )

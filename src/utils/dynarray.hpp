@@ -10,6 +10,8 @@
 #ifndef H_utils_dynarray
 #define H_utils_dynarray
 
+#include "constructor.hpp"
+
 #include <algorithm>
 #include <iterator>
 #include <stdexcept>
@@ -79,19 +81,31 @@ namespace UtopiaOS
             dynarray &operator=( const dynarray & ) = delete;
             dynarray &operator=( dynarray && ) = delete;
             
-            template<class SomeAllocator>
-            dynarray( std::initializer_list<value_type> init, SomeAllocator &&alloc )
-            : dynarray( init.begin(), init.end(), std::forward<SomeAllocator>( alloc ) )
+            template<class SomeAllocator,
+                class Constructor = utils::new_constructor<value_type>
+            >
+            dynarray( std::initializer_list<value_type> init,
+                     SomeAllocator &&alloc,
+                     Constructor constructor = Constructor() )
+            : dynarray( init.begin(), init.end(),
+                       std::forward<SomeAllocator>( alloc ),
+                       constructor )
             {}
             
-            template<class RandomAccessIterator>
+            template<class RandomAccessIterator,
+                class Constructor = utils::new_constructor<value_type>
+            >
             dynarray( RandomAccessIterator first, RandomAccessIterator last,
-                     allocator_type &&alloc )
-            : dynarray( first, last, alloc ) {}
+                     allocator_type &&alloc,
+                     Constructor constructor = Constructor() )
+            : dynarray( first, last, alloc, constructor ) {}
             
-            template<class RandomAccessIterator>
+            template<class RandomAccessIterator,
+                class Constructor = utils::new_constructor<value_type>
+            >
             dynarray( RandomAccessIterator first, RandomAccessIterator last,
-                     const allocator_type &alloc )
+                     const allocator_type &alloc,
+                     Constructor constructor = Constructor() )
             : allocator( alloc ), length( last - first ),
             buffer( allocator.allocate( length ) )
             {
@@ -100,7 +114,7 @@ namespace UtopiaOS
                 {
                     while( first != last )
                     {
-                        new (current) value_type( *first );
+                        constructor( current, *first );
                         ++first;
                     }
                 } catch( ... )

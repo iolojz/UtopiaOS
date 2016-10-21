@@ -23,6 +23,7 @@
 #include <memory_resource>
 #include <functional>
 #include <array>
+#include <iterator>
 
 #include <boost/hana.hpp>
 #include <boost/hana/ext/std/array.hpp>
@@ -182,27 +183,27 @@ namespace UtopiaOS
                     auto min_omds = omd_end - omd_begin;
                     auto max_omds = min_omds + number_of_new_omds;
                     
-                    return {sizeof(target::memory_region) * max_omds};
+                    return {sizeof(typename decltype(omd)::value_type) * max_omds};
                 }
                 
                 /** \brief Overload for \a mr_memory_tag */
                 constexpr mr_request operator()( boost::hana::basic_type<mr_memory_tag> )
                 {
                     return { number_of_memory_resources *
-                        sizeof(std::pmr::monotonic_buffer_resource) };
+                        sizeof(typename resource_ptr::element_type) };
                 }
                 
                 /** \brief Overload for \a avm_memory_tag */
                 avm_request operator()( boost::hana::basic_type<avm_memory_tag> )
                 {
-                    auto max_new_avm_fragments = number_of_memory_requests;
-                    auto min_avm_fragments = number_of_avm_fragments( memmap,
-                                                                     omd_begin,
-                                                                     omd_end );
-                    auto max_fragments = max_new_avm_fragments + min_avm_fragments;
+                    auto max_new_avm_regions = number_of_memory_requests;
+                    auto min_avm_regions = number_of_avm_regions( memmap,
+                                                                 omd_begin,
+                                                                 omd_end );
+                    auto max_regions = max_new_avm_regions + min_avm_regions;
                     
-                    return { max_fragments *
-                        sizeof(std::pmr::monotonic_buffer_resource) };
+                    return { max_regions *
+                        sizeof(typename decltype(available_memory)::value_type) };
                 }
             };
             
@@ -231,7 +232,10 @@ namespace UtopiaOS
              * \param[in] omd_begin Begin of omd
              * \param[in] omd_end End of omd
              * 
-             * The omd range has to be sorted in ascending order.
+             * \note The omd range has to be sorted in ascending
+             *       order otherwise the behaviour is undefined.
+             * \throws std::invalid_argument if the omd range is
+             *         not contained within the memory map.
              */
             template<class MemMap, class RandomAccessIterator>
             static unsynchronized_memory_manager build_memory_manager( const MemMap &memmap,
@@ -256,6 +260,11 @@ namespace UtopiaOS
                 // Get the memory request for every memory tag
                 auto memory_requests = hana::transform( memory_tags,
                                         get_memory_requirement( memmap, omd_begin, omd_end ) );
+                
+                // Find an upper bound on how many av regions there are
+                auto av_request = memory_requests[tag_index[hana::type_c<avm_memory_tag>]];
+                std::size_t max_av_regions = (av_request.size /
+                                   sizeof(typename decltype(available_memory)::value_type));
                 
                 // Allocate space for storing the memory regions that
                 // are used to meet the above requests.
@@ -300,6 +309,7 @@ namespace UtopiaOS
                 return unsynchronized_memory_manager( memmap,
                                                      new_omd.first,
                                                      new_omd.second,
+                                                     max_av_regions,
                                                      std::move( memory_resources ) );
             }
             
@@ -324,6 +334,9 @@ namespace UtopiaOS
                                                       InputIterator omd_end,
                                                       const MemRequest &request )
             {
+                utils::debug_assert( std::is_sorted( omd_begin, omd_end ),
+                                    "The omd has to be sorted!" );
+                
                 for( auto desc_it = memmap.cbegin(); desc_it != memmap.cend(); ++desc_it )
                 {
                     const auto &desc = *desc_it;
@@ -364,27 +377,108 @@ namespace UtopiaOS
                 throw std::runtime_error( "Cannot meet memory request" );
             }
             
-            /** \brief Calculate the number of memory fragments
+            /** \brief Calculate the available memory regions
+             *         and apply a function to them.
+             * \tparam MemMap The memory map type
+             * \tparam InputIterator The omd iterator type
+             * \tparam UnaryFunction The function object
+             * \param[in] memmap The memory map
+             * \param[in] omd_begin The begin of the omd
+             * \param[in] omd_end The end of the omd
+             * \param[in] function The function to be applied
+             *            to every available memory region.
+             *
+             * \note The omd range has to be sorted in ascending
+             *       order.
+             */
+            template<class MemMap, class InputIterator, class UnaryFunction>
+            static void transform_avm( const MemMap &memmap,
+                                      InputIterator omd_begin,
+                                      InputIterator omd_end,
+                                      UnaryFunction function )
+            {
+                utils::debug_assert( std::is_sorted( omd_begin, omd_end ),
+                                    "The omd has to be sorted!" );
+                
+                for( auto desc_it = memmap.cbegin(); desc_it != memmap.cend(); ++desc_it )
+                {
+                    const auto &desc = *desc_it;
+                    if( desc.type != memory_type::general_purpose )
+                        continue;
+                    
+                    target::memory_region desc_region = { desc.virtual_start,
+                        desc.number_of_pages * pagesize };
+                    auto rest = desc_region;
+                    
+                    auto intersection = omd_begin;
+                    while( (intersection = std::find_if( intersection, omd_end,
+                                    std::bind( &target::memory_region::intersects_memory_region,
+                                              rest,
+                                              std::placeholders::_1 ) )) != omd_end )
+                    {
+                        if( rest.base() != intersection->base() )
+                        {
+                            target::memory_region av_region = { rest.base(),
+                                intersection->base() - rest.base() };
+                            function( av_region );
+                        }
+                        
+                        if( intersection->top() > rest.top() )
+                        {
+                            rest = { rest.top(), 0 };
+                            break;
+                        }
+                        
+                        rest.size -= intersection->top() - rest.base();
+                        rest.start = intersection->top();
+                    }
+                    
+                    if( rest.base() != desc_region.top() )
+                    {
+                        target::memory_region av_region = { rest.base(),
+                            desc_region.top() - rest.base() };
+                        function( av_region );
+                    }
+                }
+            }
+            
+            /** \brief Calculate the number of memory regions
              * \tparam MemMap The memory map type
              * \tparam InputIterator The omd iterator type
              * \param[in] memmap The memory map
              * \param[in] omd_begin The begin of the omd
              * \param[in] omd_end The end of the omd
              *
-             * \returns The number of non-zero memory fragments.
+             * \returns The number of non-zero memory regions.
+             *
+             * \note The omd range has to be sorted in ascending
+             *       order and be completely contained within
+             *       the memory map otherwise the behaviour is
+             *       undefined.
              */
             template<class MemMap, class InputIterator>
             static std::size_t
-            number_of_avm_fragments( const MemMap &memmap,
+            number_of_avm_regions( const MemMap &memmap,
                                     InputIterator omd_begin,
-                                    InputIterator omd_end );
+                                    InputIterator omd_end )
+            {
+                std::size_t number_of_regions = 0;
+                auto count = [&] ( const auto & ) {
+                    number_of_regions++;
+                };
+                
+                transform_avm( memmap, omd_begin, omd_end, count );
+                return number_of_regions;
+            }
             
-            /** \brief Calculate the number of memory fragments
+            /** \brief Calculate the number of memory regions
              * \tparam MemMap The memory map type
              * \tparam InputIterator The omd iterator type
              * \param[in] memmap The memory map
              * \param[in] omd_begin The begin of the omd
              * \param[in] omd_end The end of the omd
+             * \param[in] max_av_regions The maximum
+             *            number of available memory regions.
              * \param[in] alloc The allocator to be used for the
              *            construction of the return value.
              *
@@ -392,16 +486,47 @@ namespace UtopiaOS
              *          objects that cover the available memory
              *
              * \note \a alloc has to be able to allocate
-             *       at least \a number_of_avm_fragments()
+             *       at least \a max_number_of_av_regions
              *       memory_resource objects otherwise
              *       the behaviour is undefined.
+             * \note If max_av_regions is less than
+             *       \a number_of_avm_regions() the behaviour
+             *       is undefined.
+             * \note The omd range has to be sorted in ascending
+             *       order and be completely contained within
+             *       the memory map otherwise the behaviour is
+             *       undefined.
              */
             template<class MemMap, class InputIterator>
-            static utils::dynarray<std::pmr::monotonic_buffer_resource, buffer_allocator>
+            static decltype(available_memory)
             enumerate_avm( const MemMap &memmap,
                           InputIterator omd_begin,
                           InputIterator omd_end,
-                          buffer_allocator &&alloc );
+                          std::size_t max_av_regions,
+                          buffer_allocator &&alloc )
+            {
+                target::memory_region av_regions[max_av_regions];
+                
+                std::size_t index = 0;
+                auto assign = [&] ( const auto &region ) {
+                    av_regions[index++] = region;
+                };
+                
+                transform_avm( memmap, omd_begin, omd_end, assign );
+                
+                using av_container = decltype(available_memory);
+                using buffer = typename av_container::value_type;
+                auto buffer_constructor = [] ( buffer *buf,
+                                              const target::memory_region &region ) {
+                    new (buf) buffer( target::uintptr_to_ptr<void>( region.base() ),
+                                     region.size );
+                };
+                
+                return av_container( &(av_regions[0]),
+                                    &(av_regions[max_av_regions]),
+                                    std::move( alloc ),
+                                    buffer_constructor );
+            }
             
             /** \brief Construct an \a unsynchronized_memory_manager from
              *         data computed by \a build_memory_manager()
@@ -411,6 +536,8 @@ namespace UtopiaOS
              * \param[in] mm The memory map
              * \param[in] omd_begin The begin of the omd
              * \param[in] omd_end The end of the omd
+             * \param[in] max_av_regions The maximum
+             *            number of available memory regions.
              * \param[inout] mr The object holding the memory resource
              *                  objects that are to be use for internal
              *                  allocations.
@@ -421,6 +548,7 @@ namespace UtopiaOS
             unsynchronized_memory_manager( const MemMap &mm,
                                           InputIterator omd_begin,
                                           InputIterator omd_end,
+                                          std::size_t max_av_regions,
                                           Resources &&mr )
             : memory_resources( std::move( mr ) ),
             memmap( mm,
@@ -428,6 +556,7 @@ namespace UtopiaOS
             omd( omd_begin, omd_end,
                 memory_resources[tag_index[boost::hana::type_c<omd_memory_tag>]].get() ),
             available_memory( enumerate_avm( memmap, omd.cbegin(), omd.cend(),
+                                            max_av_regions,
                  memory_resources[tag_index[boost::hana::type_c<avm_memory_tag>]].get() ) )
             {}
         public:

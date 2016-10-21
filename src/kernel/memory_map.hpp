@@ -179,6 +179,7 @@ valid memory descriptor with the specified arguments" );
          *
          * It has some sanity guarantees that UEFI lacks, like:
          * - fixed size of descriptors that is known compile-time
+         * - Every descriptor is valid
          * - overlapping ranges are merged if possible
          *   and removed otherwise
          * - The descriptors are sorted by virtual_start in
@@ -326,8 +327,9 @@ valid memory descriptor with the specified arguments" );
              *         kernel-usable one.
              * \param[in] uefi_map The UEFI memory map
              * \param[in] alloc The allocator to use
-             * \returns An array of descriptors with the guarantee
-             *          that they do not overlap.
+             * \returns An array of valid descriptors
+             *          with the guarantee that the
+             *          descriptors do not overlap.
              */
             static desc_array
             convert_from_uefi( const UEFI::memory_map &uefi_map,

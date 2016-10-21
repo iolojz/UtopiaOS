@@ -1,4 +1,6 @@
-/** \ingroup utils
+/** \defgroup utils Utilities
+ * \brief This module contains general purpose
+ *        templates, types and functions.
  * \{
  *
  * \file utils/assert.hpp
