@@ -16,242 +16,258 @@ namespace UtopiaOS
 {
     namespace utils
     {
-        /** \class insertion_iterator
-         * \brief An iterator class wrapping a given
-         *        iterator range and an arbitrarily
-         *        inserted reference in a new
-         *        iterator class.
-         * \tparam InputIterator The wrapped iterator class.
-         *                       Has to be an input iterator.
-         */
-        template<class InputIterator>
-        class insertion_iterator
+        namespace detail
         {
-        public:
-            /** \name Iterator Traits
-             * \{ */
-            using iterator_category = typename std::iterator_traits<InputIterator>::iterator_category;
-            using value_type = typename std::iterator_traits<InputIterator>::value_type;
-            using reference = typename std::iterator_traits<InputIterator>::reference;
-            using pointer = typename std::iterator_traits<InputIterator>::pointer;
-            using difference_type = typename std::iterator_traits<InputIterator>::difference_type;
-            /** \} */
-            
-            static constexpr bool isInput = std::is_base_of<std::input_iterator_tag,
-                iterator_category
-            >::value;
-            
-            static_assert( isInput, "Only input iterators are supported" );
-        private:
+            /** \enum region
+             * \brief Used by \a insertion_iterator to specify
+             *        the current iterator location.
+             */
             enum class region : signed
             {
                 lower = -1,
                 insertion = 0,
                 upper = 1
-            } current_region; /**< Represents the current location of the iterator. */
+            };
             
-            InputIterator real_it; /**< The real iterator object */
-            InputIterator end1; /**< The position of the inserted element */
-            pointer inserted_element; /**< A pointer to the inserted element */
-        public:
-            /** \brief Construct an insertion iterator
-             * \param[in] it An interator representing to the current position
-             * \param[in] e1 An iterator representing the location of the
-             *               inserted element.
-             * \param[in] iel A reference to the inserted element
+            /** \class insertion_iterator
+             * \brief An iterator class wrapping a given
+             *        iterator range and an arbitrarily
+             *        inserted reference in a new
+             *        iterator class.
+             * \tparam InputIterator The wrapped iterator class.
+             *                       Has to be an input iterator.
              */
-            insertion_iterator( InputIterator it, InputIterator e1, reference iel )
-            : current_region( (it < e1) ? region::lower : region::upper ),
-            real_it( it ), end1( e1 ), inserted_element( &iel ) {}
-            
-            insertion_iterator &operator++( void )
+            template<class InputIterator>
+            class insertion_iterator
             {
-                switch( current_region )
-                {
-                    case region::lower:
-                        if( ++real_it == end1 )
-                            current_region = region::insertion;
-                        break;
-                    case region::insertion:
-                        current_region = region::upper;
-                        break;
-                    default: //case region::upper:
-                        ++real_it;
-                        break;
-                }
+            public:
+                /** \name Iterator Traits
+                 * \{ */
+                using iterator_category = typename std::iterator_traits<InputIterator>::iterator_category;
+                using value_type = typename std::iterator_traits<InputIterator>::value_type;
+                using reference = typename std::iterator_traits<InputIterator>::reference;
+                using pointer = typename std::iterator_traits<InputIterator>::pointer;
+                using difference_type = typename std::iterator_traits<InputIterator>::difference_type;
+                /** \} */
                 
-                return *this;
-            }
-            
-            insertion_iterator operator++( int )
-            { insertion_iterator cp( *this ); ++(*this); return cp; }
-            
-            insertion_iterator &operator--( void )
-            {
-                switch( current_region )
-                {
-                    case region::lower:
-                        --real_it;
-                        break;
-                    case region::insertion:
-                        current_region = region::lower;
-                        --real_it;
-                        break;
-                    default: //case region::upper:
-                        if( real_it == end1 )
-                            current_region = region::insertion;
-                        break;
-                }
+                static constexpr bool isInput = std::is_base_of<std::input_iterator_tag,
+                iterator_category
+                >::value;
                 
-                return *this;
-            }
-            insertion_iterator operator--( int )
-            { insertion_iterator cp( *this ); --(*this); return cp; }
-            
-            reference operator*( void ) const
-            {
-                if( current_region == region::insertion )
-                    return *inserted_element;
-                return *real_it;
-            }
-            pointer operator->( void ) const
-            {
-                if( current_region == region::insertion )
-                    return inserted_element;
-                return &(*real_it);
-            }
-            
-            bool operator==( const insertion_iterator &it ) const
-            { return (current_region == it.current_region && real_it == it.real_it); }
-            bool operator!=( const insertion_iterator &it ) const
-            { return !(*this == it); }
-            
-            bool operator<( const insertion_iterator &it ) const
-            {
-                switch( current_region )
-                {
-                    case region::lower:
-                        if( it.current_region != region::lower )
-                            return true;
-                        return real_it < it.real_it;
-                    case region::insertion:
-                        return current_region < it.current_region;
-                    default: //case region::upper:
-                        if( it.current_region != region::upper )
-                            return false;
-                        return real_it < it.real_it;
-                }
-            }
-            bool operator<=( const insertion_iterator &it ) const
-            { return (*this == it || *this < it); }
-            bool operator>=( const insertion_iterator &it ) const
-            { return !(*this < it); }
-            bool operator>( const insertion_iterator &it ) const
-            { return !(*this <= it); }
-            
-            insertion_iterator &operator+=( difference_type n )
-            {
-                if( n < 0 )
-                    return (*this -= -n);
+                static_assert( isInput, "Only input iterators are supported" );
+            private:
+                region current_region; /**< Represents the current location of the iterator. */
                 
-                switch( current_region )
+                InputIterator real_it; /**< The real iterator object */
+                InputIterator end1; /**< The position of the inserted element */
+                pointer inserted_element; /**< A pointer to the inserted element */
+            public:
+                /** \brief Default construction of the iterator
+                 * \note Dereferencing a default-constructed iterator
+                 *       is undefined behaviour.
+                 */
+                insertion_iterator( void ) {}
+                
+                /** \brief Construct an insertion iterator
+                 * \param[in] it An interator representing to the current position
+                 * \param[in] e1 An iterator representing the location of the
+                 *               inserted element.
+                 * \param[in] iel A reference to the inserted element
+                 */
+                insertion_iterator( InputIterator e1, reference iel,
+                                   region r, InputIterator current )
+                : current_region( r ), real_it( current ),
+                end1( e1 ), inserted_element( &iel ) {}
+                
+                insertion_iterator &operator++( void )
                 {
-                    case region::lower:
+                    switch( current_region )
                     {
-                        difference_type diff1 = end1 - real_it;
-                        if( n < diff1 )
+                        case region::lower:
+                            if( ++real_it == end1 )
+                                current_region = region::insertion;
+                            break;
+                        case region::insertion:
+                            current_region = region::upper;
+                            break;
+                        default: //case region::upper:
+                            ++real_it;
+                            break;
+                    }
+                    
+                    return *this;
+                }
+                
+                insertion_iterator operator++( int )
+                { insertion_iterator cp( *this ); ++(*this); return cp; }
+                
+                insertion_iterator &operator--( void )
+                {
+                    switch( current_region )
+                    {
+                        case region::lower:
+                            --real_it;
+                            break;
+                        case region::insertion:
+                            current_region = region::lower;
+                            --real_it;
+                            break;
+                        default: //case region::upper:
+                            if( real_it == end1 )
+                                current_region = region::insertion;
+                            break;
+                    }
+                    
+                    return *this;
+                }
+                insertion_iterator operator--( int )
+                { insertion_iterator cp( *this ); --(*this); return cp; }
+                
+                reference operator*( void ) const
+                {
+                    if( current_region == region::insertion )
+                        return *inserted_element;
+                    return *real_it;
+                }
+                pointer operator->( void ) const
+                {
+                    if( current_region == region::insertion )
+                        return inserted_element;
+                    return &(*real_it);
+                }
+                
+                bool operator==( const insertion_iterator &it ) const
+                { return (current_region == it.current_region && real_it == it.real_it); }
+                bool operator!=( const insertion_iterator &it ) const
+                { return !(*this == it); }
+                
+                bool operator<( const insertion_iterator &it ) const
+                {
+                    switch( current_region )
+                    {
+                        case region::lower:
+                            if( it.current_region != region::lower )
+                                return true;
+                            return real_it < it.real_it;
+                        case region::insertion:
+                            return current_region < it.current_region;
+                        default: //case region::upper:
+                            if( it.current_region != region::upper )
+                                return false;
+                            return real_it < it.real_it;
+                    }
+                }
+                bool operator<=( const insertion_iterator &it ) const
+                { return (*this == it || *this < it); }
+                bool operator>=( const insertion_iterator &it ) const
+                { return !(*this < it); }
+                bool operator>( const insertion_iterator &it ) const
+                { return !(*this <= it); }
+                
+                insertion_iterator &operator+=( difference_type n )
+                {
+                    if( n < 0 )
+                        return (*this -= -n);
+                    
+                    switch( current_region )
+                    {
+                        case region::lower:
+                        {
+                            difference_type diff1 = end1 - real_it;
+                            if( n < diff1 )
+                                real_it += n;
+                            else if( n == diff1 )
+                            {
+                                current_region = region::insertion;
+                                real_it = end1;
+                            } else
+                            {
+                                current_region = region::upper;
+                                real_it += n-1;
+                            }
+                            break;
+                        }
+                        case region::insertion:
+                            if( n != 0 )
+                            {
+                                current_region = region::upper;
+                                real_it += n-1;
+                            }
+                            break;
+                        default: //case region::upper:
                             real_it += n;
-                        else if( n == diff1 )
-                        {
-                            current_region = region::insertion;
-                            real_it = end1;
-                        } else
-                        {
-                            current_region = region::upper;
-                            real_it += n-1;
-                        }
-                        break;
                     }
-                    case region::insertion:
-                        if( n != 0 )
-                        {
-                            current_region = region::upper;
-                            real_it += n-1;
-                        }
-                        break;
-                    default: //case region::upper:
-                        real_it += n;
+                    
+                    return *this;
                 }
+                insertion_iterator operator+( difference_type n ) const
+                { insertion_iterator cp( *this ); cp += n; return cp; }
                 
-                return *this;
-            }
-            insertion_iterator operator+( difference_type n ) const
-            { insertion_iterator cp( *this ); cp += n; return cp; }
-            
-            insertion_iterator &operator-=( difference_type n )
-            {
-                if( n < 0 )
-                    return (*this += -n);
-                
-                switch( current_region )
+                insertion_iterator &operator-=( difference_type n )
                 {
-                    case region::lower:
-                        real_it -= n;
-                        break;
-                    case region::insertion:
-                        if( n != 0 )
-                        {
-                            current_region = region::lower;
-                            real_it -= n;
-                        }
-                        break;
-                    default: //case region::upper:
+                    if( n < 0 )
+                        return (*this += -n);
+                    
+                    switch( current_region )
                     {
-                        difference_type diff1 = real_it - end1;
-                        if( n <= diff1 )
+                        case region::lower:
                             real_it -= n;
-                        else if( n == diff1 + 1 )
+                            break;
+                        case region::insertion:
+                            if( n != 0 )
+                            {
+                                current_region = region::lower;
+                                real_it -= n;
+                            }
+                            break;
+                        default: //case region::upper:
                         {
-                            current_region = region::insertion;
-                            real_it = end1;
-                        } else
-                        {
-                            current_region = region::lower;
-                            real_it -= n-1;
+                            difference_type diff1 = real_it - end1;
+                            if( n <= diff1 )
+                                real_it -= n;
+                            else if( n == diff1 + 1 )
+                            {
+                                current_region = region::insertion;
+                                real_it = end1;
+                            } else
+                            {
+                                current_region = region::lower;
+                                real_it -= n-1;
+                            }
                         }
+                    }
+                    
+                    return *this;
+                }
+                insertion_iterator operator-( difference_type n ) const
+                { insertion_iterator cp( *this ); cp -= n; return cp; }
+                
+                difference_type operator-( insertion_iterator it ) const
+                {
+                    switch( current_region )
+                    {
+                        case region::lower:
+                            if( it.current_region == region::lower )
+                                return real_it - it.real_it;
+                            return (real_it - it.real_it) - 1;
+                        case region::insertion:
+                            if( it.current_region != region::upper )
+                                return end1 - it.real_it;
+                            return (end1 - it.real_it) - 1;
+                        default: //case region::upper:
+                            if( it.current_region == region::upper )
+                                return real_it - it.real_it;
+                            return (real_it - it.real_it) + 1;
+                            
                     }
                 }
                 
-                return *this;
-            }
-            insertion_iterator operator-( difference_type n ) const
-            { insertion_iterator cp( *this ); cp -= n; return cp; }
-            
-            difference_type operator-( insertion_iterator it ) const
-            {
-                switch( current_region )
+                reference operator[]( difference_type n ) const
                 {
-                    case region::lower:
-                        if( it.current_region == region::lower )
-                            return real_it - it.real_it;
-                        return (real_it - it.real_it) - 1;
-                    case region::insertion:
-                        if( it.current_region != region::upper )
-                            return end1 - it.real_it;
-                        return (end1 - it.real_it) - 1;
-                    default: //case region::upper:
-                        if( it.current_region == region::upper )
-                            return real_it - it.real_it;
-                        return (real_it - it.real_it) + 1;
-                        
+                    return *(*this + n);
                 }
-            }
-            
-            reference operator[]( difference_type n ) const
-            {
-                return *(*this + n);
-            }
-        };
+            };
+        }
         
         /** \brief Construct an iterator range by inserting
          *         an extra reference element into a range
@@ -259,20 +275,32 @@ namespace UtopiaOS
          * \tparam InputIterator The iterator type
          * \tparam T The reference type
          * \param[in] begin The begin of the iterator range
-         * \param[in] end1 The location at which the reference
+         * \param[in] location The location at which the reference
          *                 should be inserted.
          * \param[in] ref  The reference to be inserted
-         * \param[in] end2 The end of the iterator range
+         * \param[in] end The end of the iterator range
          */
         template<class InputIterator, class T>
         auto range_by_inserting_reference( InputIterator begin,
-                                        InputIterator end1,
+                                        InputIterator location,
                                         T &&ref,
-                                        InputIterator end2 )
+                                        InputIterator end )
         {
-            using iterator = insertion_iterator<InputIterator>;
-            return std::make_pair( iterator( begin, end1, std::forward<T>( ref ) ),
-                                  iterator( end2, end1, std::forward<T>( ref ) ) );
+            using iterator = detail::insertion_iterator<InputIterator>;
+            
+            iterator new_begin;
+            
+            if( begin == end1 )
+                new_begin = iterator( location, std::forward<T>( ref ),
+                                          detail::region::insertion, begin );
+            else
+                new_begin = iterator( location, std::forward<T>( ref ),
+                                     detail::region::lower, begin );
+            
+            auto new_end = iterator( location, std::forward<T>( ref ),
+                                    detail::region::upper, end );
+            
+            return std::make_pair( new_begin, new_end );
         }
         
         /** \brief Construct an iterator range by inserting
