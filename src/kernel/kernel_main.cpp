@@ -11,10 +11,10 @@
 #include <environment/environment.hpp>
 #include <utils/trap.hpp>
 #include <utils/assert.hpp>
-#include <utils/array.hpp>
 
 #include <new>
-#include <boost/hana.hpp>
+#include <boost/range/join.hpp>
+#include <boost/range/algorithm/sort.hpp>
 
 #include "memory_manager.hpp"
 
@@ -64,7 +64,7 @@ namespace
 
 [[noreturn]] void kernel::kernel_main( const environment *env )
 {
-    utils::assert( env->kernel_stack_region.size >= min_kernel_stack_size,
+    utils::runtime_assert( env->kernel_stack_region.size >= min_kernel_stack_size,
            "Kernel stack size too small" );
     
     /** \todo initialize certain essential parts of the c++ runtime
@@ -99,12 +99,14 @@ namespace
         
         kernel_memory_map memmap( UEFI_memmap, &memmap_memory_resource );
         
-        /** \todo Mark the space occupied by env as occupied */
+        auto environment_omd = env->occupied_memory();
+        auto kernel_omd = std::array<target::memory_region, 2>{ kernel_image_region,
+            kernel_stack_region };
         
-        auto omd = std::array<target::memory_region, 2>{ kernel_image_region, kernel_stack_region };
-        std::sort( omd.begin(), omd.end() );
+        auto omd = boost::join( environment_omd, kernel_omd );
+        boost::sort( omd );
         
-        return unsynchronized_memory_manager( memmap, omd.cbegin(), omd.cend() );
+        return unsynchronized_memory_manager( memmap, boost::begin( omd ), boost::end( omd ) );
     }
 }
 

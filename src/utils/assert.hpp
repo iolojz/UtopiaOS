@@ -28,7 +28,7 @@ namespace UtopiaOS
          *            if the assertion was false.
          */
         template<class STRING>
-        void assert( bool assertion, STRING &&error_message )
+        void runtime_assert( bool assertion, STRING &&error_message )
         {
             if( assertion == false )
             {

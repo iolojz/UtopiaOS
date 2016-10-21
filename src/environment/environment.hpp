@@ -16,6 +16,9 @@
 #include <target/memory.hpp>
 #include <UEFI/memory.hpp>
 
+#include <array>
+#include <boost/range/join.hpp>
+
 namespace UtopiaOS
 {
     /** \struct environment
@@ -33,6 +36,22 @@ namespace UtopiaOS
         
         /** \brief The UEFI memory map */
         UEFI::memory_map memmap;
+        
+        /** \brief Returns the memory regions occpied by the environment
+         *         structure.
+         * \returns The memory regions occupied by the environment
+         *          object and all subobjects.
+         */
+        auto occupied_memory( void ) const
+        {
+            auto memmap_omd = memmap.occupied_memory();
+            auto object_omd = std::array<target::memory_region, 1>{ target::memory_region{
+                target::ptr_to_uintptr( this ),
+                sizeof( environment )
+            } };
+            
+            return boost::join( memmap_omd, object_omd );
+        }
     };
 }
 

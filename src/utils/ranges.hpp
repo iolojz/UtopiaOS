@@ -290,7 +290,7 @@ namespace UtopiaOS
             
             iterator new_begin;
             
-            if( begin == end1 )
+            if( begin == location )
                 new_begin = iterator( location, std::forward<T>( ref ),
                                           detail::region::insertion, begin );
             else

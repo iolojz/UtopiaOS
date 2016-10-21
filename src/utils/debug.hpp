@@ -29,7 +29,7 @@ namespace UtopiaOS
         void debug_assert( bool assertion, STRING &&error_message )
         {
 #if UTOPIAOS_ENABLE_DEBUG_ASSERTS
-            assert( assertion, std::forward<STRING>( error_message ) );
+            runtime_assert( assertion, std::forward<STRING>( error_message ) );
 #endif
         }
     }

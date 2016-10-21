@@ -14,6 +14,7 @@
 #include <target/memory.hpp>
 
 #include <iterator>
+#include <array>
 
 namespace UtopiaOS
 {
@@ -225,6 +226,19 @@ namespace UtopiaOS
             const_iterator_v1 cend_v1( void ) const
             { return (const_iterator_v1( descriptors, descriptor_size ) += number_of_descriptors); }
             /* \} */
+            
+            /** \brief Returns the memory regions occpied by the memory map.
+             * \returns The memory regions occupied by the memory_map object.
+             */
+            auto occupied_memory( void ) const
+            {
+                target::memory_region object_region = { target::ptr_to_uintptr( this ),
+                    sizeof( memory_map ) };
+                target::memory_region descriptor_region = { target::ptr_to_uintptr( descriptors ),
+                    sizeof( number_of_descriptors * descriptor_size ) };
+                
+                return std::array<target::memory_region, 2>{ object_region, descriptor_region };
+            }
         };
     }
 }
