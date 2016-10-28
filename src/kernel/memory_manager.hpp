@@ -28,6 +28,7 @@
 #include <boost/hana.hpp>
 #include <boost/hana/ext/std/array.hpp>
 #include <boost/hana/ext/std/integer_sequence.hpp>
+#include <boost/range/iterator_range_core.hpp>
 
 namespace UtopiaOS
 {
@@ -231,7 +232,7 @@ namespace UtopiaOS
              * \param[in] memmap The memory map
              * \param[in] omd_begin Begin of omd
              * \param[in] omd_end End of omd
-             * 
+             *
              * \note The omd range has to be sorted in ascending
              *       order otherwise the behaviour is undefined.
              * \throws std::invalid_argument if the omd range is
@@ -242,24 +243,34 @@ namespace UtopiaOS
                                                                       RandomAccessIterator omd_begin,
                                                                       RandomAccessIterator omd_end )
             {
-                namespace hana = boost::hana;
-                
                 utils::debug_assert( std::is_sorted( omd_begin, omd_end ),
                              "The omd has to be sorted!" );
                 
+                namespace hana = boost::hana;
+                
+                target::memory_region this_omd = { utils::ptr_to_uintptr( this ),
+                    sizeof(decltype(*this)) };
+                auto omd_view = utils::sorted_range_insert_reference(
+                                        boost::make_iterator_range( omd_begin, omd_end ),
+                                                                     this_omd );
+                
                 // Sanity check: Is all occupied memory contained in the memory map?
-                std::for_each( omd_begin, omd_end, [&memmap] ( const target::memory_region &region ) {
+                std::for_each( boost::begin( omd_view ),
+                              boost::end( omd_view ),
+                              [&memmap] ( const target::memory_region &region ) {
                     auto it = std::find_if( memmap.cbegin(), memmap.cend(),
-                           std::bind( std::mem_fn( &memory_descriptor::contains_memory_region ),
-                                     std::placeholders::_1, region ) );
-                    
+                                std::bind( std::mem_fn( &memory_descriptor::contains_memory_region ),
+                                                        std::placeholders::_1, region ) );
+                                  
                     if( it == memmap.cend() )
                         throw std::invalid_argument( "Occupied memory not contained in memory map" );
                 } );
                 
                 // Get the memory request for every memory tag
                 auto memory_requests = hana::transform( memory_tags,
-                                        get_memory_requirement( memmap, omd_begin, omd_end ) );
+                                            get_memory_requirement( memmap,
+                                                                   boost::begin( omd_view ),
+                                                                   boost::end( omd_view ) ) );
                 
                 // Find an upper bound on how many av regions there are
                 auto av_request = memory_requests[tag_index[hana::type_c<avm_memory_tag>]];
@@ -275,17 +286,15 @@ namespace UtopiaOS
                 // above and calculate the new omd, that marks these
                 // allocated regions as occupied.
                 auto new_omd = hana::fold_left( memory_tags,
-                                               std::make_pair( omd_begin, omd_end ),
-                    [&] ( const auto &state, auto tag ) {
-                        const auto &omd_begin = state.first;
-                        const auto &omd_end = state.second;
+                                               omd_view,
+                    [&] ( const auto &omd, auto tag ) {
                         const auto &request = memory_requests[tag_index[tag]];
                         
                         request_omds[tag_index[tag]] = meet_request( memmap,
-                                                                    omd_begin,
-                                                                    omd_end,
+                                                                    boost::begin( omd ),
+                                                                    boost::end( omd ),
                                                                     request );
-                        return utils::sorted_range_insert_reference( omd_begin, omd_end,
+                        return utils::sorted_range_insert_reference( omd,
                                                              request_omds[tag_index[tag]] );
                     }
                 );
@@ -307,8 +316,8 @@ namespace UtopiaOS
                 } );
                 
                 return unsynchronized_memory_manager( memmap,
-                                                     new_omd.first,
-                                                     new_omd.second,
+                                                     boost::begin( new_omd ),
+                                                     boost::end( new_omd ),
                                                      max_av_regions,
                                                      std::move( memory_resources ) );
             }
@@ -598,6 +607,8 @@ namespace UtopiaOS
              *         move-assignable!
              */
             unsynchronized_memory_manager &operator=( unsynchronized_memory_manager && ) = default;
+            
+            
         };
     }
 }

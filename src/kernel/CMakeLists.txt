@@ -3,13 +3,6 @@ cmake_minimum_required (VERSION 3.3)
 
 project (UtopiaOS_kernel VERSION 0.1)
 
-# Debug build system
-set (CMAKE_VERBOSE_MAKEFILE ON)
-
-# Set the c++ standard that is required!
-set (CMAKE_CXX_STANDARD 14)
-set (CMAKE_CXX_STANDARD_REQUIRED ON)
-
 set (MODULE_KERNEL_SOURCES kernel_main.cpp)
 
 if (UTOPIAOS_HOSTED)

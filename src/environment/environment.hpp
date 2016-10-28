@@ -15,8 +15,8 @@
 
 #include <target/memory.hpp>
 #include <UEFI/memory.hpp>
+#include <utils/make_array.hpp>
 
-#include <array>
 #include <boost/range/join.hpp>
 
 namespace UtopiaOS
@@ -45,12 +45,15 @@ namespace UtopiaOS
         auto occupied_memory( void ) const
         {
             auto memmap_omd = memmap.occupied_memory();
-            auto object_omd = std::array<target::memory_region, 1>{ target::memory_region{
+            auto this_omd = std::array<target::memory_region, 1>{ target::memory_region{
                 target::ptr_to_uintptr( this ),
                 sizeof( environment )
             } };
             
-            return boost::join( memmap_omd, object_omd );
+            auto combined_view = boost::join( memmap_omd, this_omd );
+            constexpr auto size = memmap_omd.size() + this_omd.size();
+            
+            return utils::make_array<size>::iterate( boost::begin( combined_view ) );
         }
     };
 }

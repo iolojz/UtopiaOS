@@ -13,13 +13,12 @@
 #include <utils/assert.hpp>
 
 #include <new>
+#include <algorithm>
 #include <boost/range/join.hpp>
-#include <boost/range/algorithm/sort.hpp>
 
 #include "memory_manager.hpp"
 
 using namespace UtopiaOS;
-namespace hana = boost::hana;
 
 /** \brief Effectively disable dynamic memory management
  *         by always throwing a std::bad_alloc exception
@@ -100,13 +99,15 @@ namespace
         kernel_memory_map memmap( UEFI_memmap, &memmap_memory_resource );
         
         auto environment_omd = env->occupied_memory();
-        auto kernel_omd = std::array<target::memory_region, 2>{ kernel_image_region,
+        std::array<target::memory_region, 2> kernel_omd = { kernel_image_region,
             kernel_stack_region };
         
-        auto omd = boost::join( environment_omd, kernel_omd );
-        boost::sort( omd );
+        auto combined_view = boost::join( environment_omd, kernel_omd );
+        std::sort( boost::begin( combined_view ), boost::end( combined_view ) );
         
-        return unsynchronized_memory_manager( memmap, boost::begin( omd ), boost::end( omd ) );
+        return unsynchronized_memory_manager( memmap,
+                                             boost::begin( combined_view ),
+                                             boost::end( combined_view ) );
     }
 }
 
