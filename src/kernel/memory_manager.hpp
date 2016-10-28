@@ -13,6 +13,7 @@
 #define H_kernel_memory_manager
 
 #include "memory_map.hpp"
+#include "buddy_resource.hpp"
 
 #include <utils/debug.hpp>
 #include <utils/destruct_deleter.hpp>
@@ -96,10 +97,21 @@ namespace UtopiaOS
             using resource_ptr = std::unique_ptr<std::pmr::monotonic_buffer_resource,
                                                                       resource_deleter>;
             
+            static constexpr auto mr_type_tuple = boost::hana::replicate<
+                boost::hana::tuple_tag
+            >( boost::hana::type_c<resource_ptr>, boost::hana::length( non_mr_tags ) );
+            
             /** \brief The memory resources used internally by
              * the unsynchronized_memory_manager
              */
-            std::array<resource_ptr, boost::hana::length( non_mr_tags )> memory_resources;
+            decltype( boost::hana::unpack( mr_type_tuple,
+                     boost::hana::template_<boost::hana::tuple> ))::type memory_resources;
+            
+            /** \brief The memory resource that can be used from
+             *         outside the memory manager to allocate
+             *         its managed memory.
+             */
+            buddy_resource<0> encapsulation_resource;
             
             /** \name Allocator Types
              * \brief Used by different managment objects that are part of the
@@ -248,11 +260,7 @@ namespace UtopiaOS
                 
                 namespace hana = boost::hana;
                 
-                target::memory_region this_omd = { utils::ptr_to_uintptr( this ),
-                    sizeof(decltype(*this)) };
-                auto omd_view = utils::sorted_range_insert_reference(
-                                        boost::make_iterator_range( omd_begin, omd_end ),
-                                                                     this_omd );
+                auto omd_view = boost::make_iterator_range( omd_begin, omd_end );
                 
                 // Sanity check: Is all occupied memory contained in the memory map?
                 std::for_each( boost::begin( omd_view ),
@@ -537,6 +545,30 @@ namespace UtopiaOS
                                     buffer_constructor );
             }
             
+            /** \struct create_encapsulation_resource
+             * \brief Function object to ease construction
+             *        of the encapsulating memory resource.
+             */
+            struct create_encapsulation_resource
+            {
+                /** \brief Creates an encapsulating memory resource
+                 *         from a list of memory resource pointers.
+                 * \returns A memory resource object that encapsulates
+                 *          the given memory resources.
+                 * \tparam Resources The resource types
+                 * \param[in] resources The given memory resources
+                 *
+                 * \note The arguments can also be smart pointers.
+                 */
+                template<class... Resources>
+                auto operator()( Resources &&...resources )
+                {
+                    return decltype(encapsulation_resource){
+                        std::addressof( *resources )...
+                    };
+                }
+            };
+            
             /** \brief Construct an \a unsynchronized_memory_manager from
              *         data computed by \a build_memory_manager()
              * \tparam MemMap The memory map type
@@ -560,6 +592,8 @@ namespace UtopiaOS
                                           std::size_t max_av_regions,
                                           Resources &&mr )
             : memory_resources( std::move( mr ) ),
+            encapsulation_resource( boost::hana::unpack( memory_resources,
+                                                 create_encapsulation_resource() ) ),
             memmap( mm,
                    memory_resources[tag_index[boost::hana::type_c<memmap_memory_tag>]].get() ),
             omd( omd_begin, omd_end,
@@ -608,7 +642,15 @@ namespace UtopiaOS
              */
             unsynchronized_memory_manager &operator=( unsynchronized_memory_manager && ) = default;
             
-            
+            /** \brief Returns a memory resource that can be used to
+             *         allocate memory managed by the memory manager.
+             * \returns A memory resource object that can be used to
+             *         allocate memory managed by the memory manager.
+             */
+            std::pmr::memory_resource *resource( void )
+            {
+                return &encapsulation_resource;
+            }
         };
     }
 }
