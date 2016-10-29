@@ -13,6 +13,7 @@
 #define H_kernel_memory_manager
 
 #include "memory_map.hpp"
+#include "distributed_resource.hpp"
 #include "buddy_resource.hpp"
 
 #include <utils/debug.hpp>
@@ -107,11 +108,17 @@ namespace UtopiaOS
             decltype( boost::hana::unpack( mr_type_tuple,
                      boost::hana::template_<boost::hana::tuple> ))::type memory_resources;
             
+            /** \brief A memory resource object combining
+             *         the above \a memory_resources list
+             *         into one memory_resource object.
+             */
+            distributed_resource combined_resource;
+            
             /** \brief The memory resource that can be used from
              *         outside the memory manager to allocate
              *         its managed memory.
              */
-            buddy_resource<0> encapsulation_resource;
+            buddy_resource<0> exposed_resource;
             
             /** \name Allocator Types
              * \brief Used by different managment objects that are part of the
@@ -549,7 +556,7 @@ namespace UtopiaOS
              * \brief Function object to ease construction
              *        of the encapsulating memory resource.
              */
-            struct create_encapsulation_resource
+            struct create_combined_resource
             {
                 /** \brief Creates an encapsulating memory resource
                  *         from a list of memory resource pointers.
@@ -563,7 +570,7 @@ namespace UtopiaOS
                 template<class... Resources>
                 auto operator()( Resources &&...resources )
                 {
-                    return decltype(encapsulation_resource){
+                    return decltype(combined_resource){
                         std::addressof( *resources )...
                     };
                 }
@@ -592,8 +599,9 @@ namespace UtopiaOS
                                           std::size_t max_av_regions,
                                           Resources &&mr )
             : memory_resources( std::move( mr ) ),
-            encapsulation_resource( boost::hana::unpack( memory_resources,
-                                                 create_encapsulation_resource() ) ),
+            combined_resource( boost::hana::unpack( memory_resources,
+                                                   create_combined_resource() ) ),
+            exposed_resource( std::addressof( combined_resource ) ),
             memmap( mm,
                    memory_resources[tag_index[boost::hana::type_c<memmap_memory_tag>]].get() ),
             omd( omd_begin, omd_end,
@@ -649,7 +657,7 @@ namespace UtopiaOS
              */
             std::pmr::memory_resource *resource( void )
             {
-                return &encapsulation_resource;
+                return &exposed_resource;
             }
         };
     }
