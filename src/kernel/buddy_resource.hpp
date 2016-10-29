@@ -10,12 +10,7 @@
 #ifndef H_kernel_buddy_resource
 #define H_kernel_buddy_resource
 
-#include <initializer_list>
 #include <memory_resource>
-#include <memory>
-
-#include <utils/dynarray.hpp>
-#include <target/memory.hpp>
 
 namespace UtopiaOS
 {

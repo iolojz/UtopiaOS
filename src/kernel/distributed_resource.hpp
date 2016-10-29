@@ -192,15 +192,6 @@ namespace UtopiaOS
             : resources( store_resources( upstream_resources.begin(),
                                          upstream_resources.end() ) )
             {}
-            
-            virtual void* allocate( std::size_t bytes, std::size_t alignment )
-            { return do_allocate( bytes, alignment ); }
-            
-            virtual void deallocate( void* p, std::size_t bytes, std::size_t alignment )
-            { return do_deallocate( p, bytes, alignment ); }
-            
-            virtual bool is_equal( const std::pmr::memory_resource& other ) const
-            { return do_is_equal( other ); }
         };
     }
 }
