@@ -529,7 +529,9 @@ namespace UtopiaOS
                           std::size_t max_av_regions,
                           buffer_allocator &&alloc )
             {
-                target::memory_region av_regions[max_av_regions];
+                auto av_regions = reinterpret_cast<target::memory_region *>(
+                         UTOPIAOS_ALLOCA_WITH_ALIGN( max_av_regions * sizeof(target::memory_region),
+                                                    alignof(target::memory_region) ) );
                 target::memory_region *current = av_regions;
                 
                 auto assign = [&current] ( const auto &region ) {
