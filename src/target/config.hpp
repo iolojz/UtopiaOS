@@ -28,18 +28,26 @@
  */
 #define UTOPIAOS_TRAP() __builtin_trap()
 
+/** \def UTOPIAOS_ALLOCA_WITH_ALIGN_HEADER
+ * \brief If this macro is defined it contains the header
+ *        that needs to be included in order to use
+ *        \a UTOPIAOS_ALLOCA_WITH_ALIGN
+ */
+#define UTOPIAOS_ALLOCA_WITH_ALIGN_HEADER <climits>
+
 /** \def UTOPIAOS_ALLOCA_WITH_ALIGN( size, alignment )
  * \brief Requests a memory block of specified size and alignment
  *        that is automatically freed upon the end of the current
  *        block.
  * \param[in] size The size of the requested memory block
  * \param[in] alignment The compiletime-constant alignment
- *            of the requested memory block
+ *            of the requested memory block (in bytes)
  * \return A void * pointing to the newly allocated memory block
  *
  * \warning \a alignment has to be a power of two!
  */
-#define UTOPIAOS_ALLOCA_WITH_ALIGN( size, alignment ) __builtin_alloca_with_align( (size), (alignment) )
+#define UTOPIAOS_ALLOCA_WITH_ALIGN( size, alignment ) \
+__builtin_alloca_with_align( (size), ((CHAR_BIT)*alignment) )
 
 /** \name UEFI compatible types
  * \todo These should be automatically generated

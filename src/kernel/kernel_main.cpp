@@ -12,6 +12,10 @@
 #include <utils/trap.hpp>
 #include <utils/assert.hpp>
 
+#ifdef UTOPIAOS_ALLOCA_WITH_ALIGN_HEADER
+#include UTOPIAOS_ALLOCA_WITH_ALIGN_HEADER
+#endif
+
 #include <new>
 #include <algorithm>
 #include <boost/range/join.hpp>
@@ -89,6 +93,8 @@ namespace
         auto kernel_image_region = env->kernel_image_region;
         auto kernel_stack_region = env->kernel_stack_region;
         auto &UEFI_memmap = env->memmap;
+        
+        /** \todo Perform some runtime size check */
         
         auto memmap_memory_requirement = kernel_memory_map::maximum_conversion_requirement( UEFI_memmap );
         void *memmap_memory = UTOPIAOS_ALLOCA_WITH_ALIGN( memmap_memory_requirement.size,

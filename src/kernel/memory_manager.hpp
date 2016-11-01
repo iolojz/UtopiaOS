@@ -16,9 +16,14 @@
 #include "distributed_resource.hpp"
 #include "buddy_resource.hpp"
 
+#include <target/config.hpp>
 #include <utils/debug.hpp>
 #include <utils/destruct_deleter.hpp>
 #include <utils/ranges.hpp>
+
+#ifdef UTOPIAOS_ALLOCA_WITH_ALIGN_HEADER
+#include UTOPIAOS_ALLOCA_WITH_ALIGN_HEADER
+#endif
 
 #include <memory>
 #include <algorithm>
@@ -30,7 +35,6 @@
 #include <boost/hana.hpp>
 #include <boost/hana/ext/std/array.hpp>
 #include <boost/hana/ext/std/integer_sequence.hpp>
-#include <boost/range/iterator_range_core.hpp>
 
 namespace UtopiaOS
 {
@@ -529,6 +533,8 @@ namespace UtopiaOS
                           std::size_t max_av_regions,
                           buffer_allocator &&alloc )
             {
+                /** \todo Perform some runtime size check." */
+                
                 auto av_regions = reinterpret_cast<target::memory_region *>(
                          UTOPIAOS_ALLOCA_WITH_ALIGN( max_av_regions * sizeof(target::memory_region),
                                                     alignof(target::memory_region) ) );
