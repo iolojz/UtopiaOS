@@ -91,18 +91,14 @@ namespace UtopiaOS
              */
             std::size_t required_padding( std::size_t bytes, std::size_t alignment )
             {
-                if( std::numeric_limits<std::size_t>::max() - bytes < alignment )
-                    throw std::overflow_error( "" );
-                
-                std::size_t end_alignment_offset = ((alignment + bytes) %
-                                                    alignof(std::size_t));
+                std::size_t end_alignment_offset = ((alignment % alignof(std::size_t)) +
+                                                    (bytes % alignof(std::size_t)));
                 std::size_t padding;
                 
                 if( end_alignment_offset != 0 )
                 {
                     padding = alignof(std::size_t) - end_alignment_offset;
-                    if( std::numeric_limits<std::size_t>::max() - padding <
-                       alignment + bytes )
+                    if( std::numeric_limits<std::size_t>::max() - padding < bytes )
                         throw std::overflow_error( "" );
                 } else
                     padding = 0;

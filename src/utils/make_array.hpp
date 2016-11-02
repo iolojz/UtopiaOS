@@ -27,7 +27,7 @@ namespace UtopiaOS
             /** \brief Helper template for utils::make_array
              */
             template<class ForwardIterator, std::size_t N, class T>
-            struct make_array
+            struct make_array_it
             {
                 using decayed_type = typename std::decay<
                     typename std::iterator_traits<ForwardIterator>::value_type
@@ -42,7 +42,7 @@ namespace UtopiaOS
                 >::type
                 {
                     ForwardIterator copy( begin );
-                    return make_array<ForwardIterator, N-1, T>::iterate( ++begin,
+                    return make_array_it<ForwardIterator, N-1, T>::iterate( ++begin,
                                                                         std::forward<Args>( args )...,
                                                                         *copy );
                 }
@@ -55,7 +55,7 @@ namespace UtopiaOS
                 >::type
                 {
                     ForwardIterator copy( begin );
-                    return make_array<ForwardIterator, N-1, T>::iterate( ++begin,
+                    return make_array_it<ForwardIterator, N-1, T>::iterate( ++begin,
                                                                         std::forward<Args>( args )...,
                                                                         T( *copy ) );
                 }
@@ -63,12 +63,37 @@ namespace UtopiaOS
             
             /** \brief Specialized helper template for utils::make_array */
             template<class ForwardIterator, class T>
-            struct make_array<ForwardIterator, 0, T>
+            struct make_array_it<ForwardIterator, 0, T>
             {
                 template<class... Args>
                 static auto iterate( ForwardIterator begin, Args &&...args )
                 {
-                    return std::array<T, sizeof...(Args)>{ args... };
+                    return std::array<T, sizeof...(Args)>{ std::forward<Args>( args )... };
+                }
+            };
+            
+            /** \brief Helper template for utils::make_array
+             */
+            template<std::size_t N, class T>
+            struct make_array_copy
+            {
+                template<class Init, class... Args>
+                static auto copy( const Init &init, Args &&...args )
+                {
+                    return make_array_copy<N-1, T>::copy( init,
+                                                         std::forward<Args>( args )...,
+                                                         init );
+                }
+            };
+            
+            /** \brief Specialized helper template for utils::make_array */
+            template<class T>
+            struct make_array_copy<0, T>
+            {
+                template<class Init, class... Args>
+                static auto copy( const Init &init, Args &&...args )
+                {
+                    return std::array<T, sizeof...(Args)>{ std::forward<Args>( args )... };
                 }
             };
         }
@@ -103,7 +128,19 @@ namespace UtopiaOS
                     T
                 >::type;
                 
-                return detail::make_array<ForwardIterator, N, value_type>::iterate( begin );
+                return detail::make_array_it<ForwardIterator, N, value_type>::iterate( begin );
+            }
+            
+            template<class Init>
+            static auto copy( const Init &init )
+            {
+                using value_type = typename std::conditional<
+                    std::is_void<T>::value,
+                    typename std::decay<Init>::type,
+                    T
+                >::type;
+                
+                return detail::make_array_copy<N, value_type>::copy( init );
             }
         };
     }

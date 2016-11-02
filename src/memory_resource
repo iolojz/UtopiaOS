@@ -13,6 +13,8 @@
 #define H_memory_resource
 
 #include <cstddef>
+#include <utility>
+#include <tuple>
 
 namespace std
 {

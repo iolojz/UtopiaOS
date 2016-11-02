@@ -122,7 +122,7 @@ namespace UtopiaOS
              *         outside the memory manager to allocate
              *         its managed memory.
              */
-            buddy_resource<0> exposed_resource;
+            buddy_resource<minimum_block_size, maximum_block_size> exposed_resource;
             
             /** \name Allocator Types
              * \brief Used by different managment objects that are part of the
