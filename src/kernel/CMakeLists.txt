@@ -3,7 +3,7 @@ cmake_minimum_required (VERSION 3.3)
 
 project (UtopiaOS_kernel VERSION 0.1)
 
-set (MODULE_KERNEL_SOURCES kernel_main.cpp)
+set (MODULE_KERNEL_SOURCES kernel_main.cpp buddy_resource.cpp)
 
 if (UTOPIAOS_HOSTED)
   add_library (kernel SHARED ${MODULE_KERNEL_SOURCES})
