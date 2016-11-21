@@ -118,12 +118,6 @@ namespace UtopiaOS
              */
             distributed_resource combined_resource;
             
-            /** \brief The memory resource that can be used from
-             *         outside the memory manager to allocate
-             *         its managed memory.
-             */
-            buddy_resource<minimum_block_size, maximum_block_size> exposed_resource;
-            
             /** \name Allocator Types
              * \brief Used by different managment objects that are part of the
              *        unsynchronized_memory_manager object.
@@ -609,7 +603,6 @@ namespace UtopiaOS
             : memory_resources( std::move( mr ) ),
             combined_resource( boost::hana::unpack( memory_resources,
                                                    create_combined_resource() ) ),
-            exposed_resource( std::addressof( combined_resource ) ),
             memmap( mm,
                    memory_resources[tag_index[boost::hana::type_c<memmap_memory_tag>]].get() ),
             omd( omd_begin, omd_end,
@@ -660,12 +653,14 @@ namespace UtopiaOS
             
             /** \brief Returns a memory resource that can be used to
              *         allocate memory managed by the memory manager.
+             * \note Deallocating memory is not guaranteed to make
+             *       the memory available again!
              * \returns A memory resource object that can be used to
              *         allocate memory managed by the memory manager.
              */
-            std::pmr::memory_resource *resource( void )
+            std::pmr::memory_resource *exposed_resource( void )
             {
-                return &exposed_resource;
+                return &combined_resource;
             }
         };
     }
