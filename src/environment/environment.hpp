@@ -29,9 +29,10 @@ namespace UtopiaOS
      */
     struct environment
     {
-        void *versioned_data; /**< A pointer to the data */
-        unsigned version; /**< The version of the structure */
-    }
+        void *data; /**< A pointer to the data */
+        UEFI::uint32 version; /**< The version of the structure */
+        UEFI::uint32 least_compatible_version; /**< The minimum version that is still compatible */
+    };
     
     /** \struct environment_v1
      * \brief A struct containing the information that
@@ -44,10 +45,10 @@ namespace UtopiaOS
     {
         /** \brief The memory region where the kernel
          *         binary is loaded */
-        target::memory_region kernel_image_region;
+        UEFI::memory_region kernel_image_region;
         /** \brief The memory region where the kernel
          *         stack is located */
-        target::memory_region kernel_stack_region;
+        UEFI::memory_region kernel_stack_region;
         
         /** \brief The UEFI memory map */
         UEFI::memory_map memmap;

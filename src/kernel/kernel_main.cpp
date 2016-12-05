@@ -67,15 +67,19 @@ namespace
 
 [[noreturn]] void kernel::kernel_main( const environment *env )
 {
-    utils::runtime_assert( env->kernel_stack_region.size >= min_kernel_stack_size,
+    utils::runtime_assert( env->least_compatible_version == 1,
+                          "Environment has incompatible version." );
+    
+    auto environment = reinterpret_cast<const environment_v1 *>( env->data );
+    utils::runtime_assert( environment->kernel_stack_region.size >= min_kernel_stack_size,
            "Kernel stack size too small" );
     
     /** \todo initialize certain essential parts of the c++ runtime
      * exception handling
      */
     
-    auto memory_pool = setup_memory_manager( env );
-    morph_into_scheduler_outsource_memory( std::move( memory_pool ) );
+    auto memory_manager = setup_memory_manager( env );
+    morph_into_scheduler_outsource_memory( std::move( memory_manager ) );
 }
 
 namespace
@@ -84,15 +88,19 @@ namespace
     
     unsynchronized_memory_manager setup_memory_manager( const environment *env )
     {
+        utils::runtime_assert( env->least_compatible_version == 1,
+                              "Environment has incompatible version." );
+        auto environment = reinterpret_cast<const environment_v1 *>( env->data );
+        
         using namespace UtopiaOS;
         using namespace kernel;
         
         using memory_descriptor_allocator = std::pmr::polymorphic_allocator<memory_descriptor>;
         using kernel_memory_map = memory_map<memory_descriptor_allocator>;
         
-        auto kernel_image_region = env->kernel_image_region;
-        auto kernel_stack_region = env->kernel_stack_region;
-        auto &UEFI_memmap = env->memmap;
+        auto kernel_image_region = environment->kernel_image_region;
+        auto kernel_stack_region = environment->kernel_stack_region;
+        auto &UEFI_memmap = environment->memmap;
         
         /** \todo Perform some runtime size check */
         
@@ -104,9 +112,11 @@ namespace
         
         kernel_memory_map memmap( UEFI_memmap, &memmap_memory_resource );
         
-        auto environment_omd = env->occupied_memory();
-        std::array<target::memory_region, 2> kernel_omd = { kernel_image_region,
-            kernel_stack_region };
+        auto environment_omd = environment->occupied_memory();
+        std::array<target::memory_region, 2> kernel_omd = {
+            target::memory_region( kernel_image_region ),
+            target::memory_region( kernel_stack_region )
+        };
         
         auto combined_view = boost::join( environment_omd, kernel_omd );
         std::sort( boost::begin( combined_view ), boost::end( combined_view ) );

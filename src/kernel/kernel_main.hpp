@@ -24,6 +24,8 @@ namespace UtopiaOS
          * \param[in] env The data passed on from the bootloader
          *
          * \warning This function never returns!
+         * \note This function prototype needs to be API/ABI-stable
+         *       and hence may not be changed!
          */
         [[noreturn]] void kernel_main( const environment *env );
     }

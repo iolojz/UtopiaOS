@@ -335,8 +335,11 @@ valid memory descriptor with the specified arguments" );
             convert_from_uefi( const UEFI::memory_map &uefi_map,
                               allocator_type &&alloc )
             {
-                desc_array stage1_descriptors( uefi_map.cbegin_v1(),
-                                              uefi_map.cend_v1(),
+                utils::runtime_assert( uefi_map.least_compatible_version == 1,
+                                      "UEFI memory map has incompatible version." );
+                
+                desc_array stage1_descriptors( UEFI::cbegin_v1( uefi_map ),
+                                              UEFI::cend_v1( uefi_map ),
                                               std::forward<allocator_type>( alloc ) );
                 
                 auto endValid = std::partition( stage1_descriptors.begin(),

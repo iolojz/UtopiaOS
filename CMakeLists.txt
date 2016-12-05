@@ -22,3 +22,5 @@ endif ()
 
 configure_file (project_config.cmake include/project_config.hpp)
 include_directories (${PROJECT_BINARY_DIR}/include)
+
+add_subdirectory (src)

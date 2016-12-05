@@ -112,8 +112,6 @@ namespace UtopiaOS
         class const_memory_map_iterator
         {
         public:
-            friend class UEFI::memory_map;
-            
             /** \name Iterator Traits
              * \{ */
             using iterator_category = std::random_access_iterator_tag;
@@ -125,11 +123,11 @@ namespace UtopiaOS
             
             pointer descriptor; /**< The current memory descriptor */
             un descriptor_size; /**< The real size of the memory descriptor */
-        private:
+        public:
             /** \brief Construct an iterator from data supplied by a UEFI memory map */
             const_memory_map_iterator( void *d, un s )
             : descriptor( reinterpret_cast<pointer>( d ) ), descriptor_size( s ) {}
-        public:
+            
             const_memory_map_iterator &operator++( void )
             {
                 descriptor = target::uintptr_to_ptr<value_type>(
@@ -210,6 +208,7 @@ namespace UtopiaOS
             un number_of_descriptors;
             un descriptor_size;
             uint32 descriptor_version;
+            uint32 least_compatible_version; /**< The minimum version that is still compatible */
             
             /** \brief Returns the memory regions occpied by the memory map.
              * \returns The memory regions occupied by the memory_map object.
@@ -233,12 +232,38 @@ namespace UtopiaOS
         
         /** \name v1 memory map traversal functions
          * \{ */
-        const_memmap_iterator_v1 cbegin_v1( const memory_map &memmap ) const
-        { return const_iterator_v1( memmap.descriptors, memmap.descriptor_size ); }
-        const_memmap_iterator_v1 cend_v1( const memory_map &memmap ) const
-        { return (const_iterator_v1( memmap.descriptors, memmap.descriptor_size )
-                  += number_of_descriptors); }
+        const_memmap_iterator_v1 cbegin_v1( const memory_map &memmap )
+        { return const_memmap_iterator_v1( memmap.descriptors, memmap.descriptor_size ); }
+        const_memmap_iterator_v1 cend_v1( const memory_map &memmap )
+        { return (const_memmap_iterator_v1( memmap.descriptors, memmap.descriptor_size )
+                  += memmap.number_of_descriptors); }
         /* \} */
+        
+        /** \struct memory_region
+         * \brief This struct represents a memory region
+         *        in a UEFI-compatible way
+         */
+        struct memory_region
+        {
+            /** \brief The start of the memory region */
+            uint64 start;
+            /** \brief The size of the memory region */
+            uint64 size;
+            
+            /** \brief Explicit conversion operator to
+             *         target::memory_region for use
+             *         by the kernel.
+             */
+            explicit operator target::memory_region( void ) const
+            {
+                static_assert( (std::numeric_limits<uint64>::max() <=
+                                std::numeric_limits<std::uintptr_t>::max()) &&
+                              (std::numeric_limits<uint64>::max() <=
+                               std::numeric_limits<std::size_t>::max()),
+                              "UEFI memory region and target memory region are incompatible." );
+                return target::memory_region{ start, size };
+            }
+        };
     }
 }
 
