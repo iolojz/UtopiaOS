@@ -47,7 +47,7 @@
  * \warning \a alignment has to be a power of two!
  */
 #define UTOPIAOS_ALLOCA_WITH_ALIGN( size, alignment ) \
-__builtin_alloca_with_align( (size), ((CHAR_BIT)*alignment) )
+__builtin_alloca_with_align( (size), ((CHAR_BIT)*(alignment)) )
 
 /** \name UEFI compatible types
  * \todo These should be automatically generated
