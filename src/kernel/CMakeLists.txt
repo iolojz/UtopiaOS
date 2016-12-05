@@ -1,7 +1,8 @@
 ########### module: kernel #########
 cmake_minimum_required (VERSION 3.3)
 
-project (UtopiaOS_kernel VERSION 0.1)
+project (UtopiaOS_kernel VERSION 0.1.0.0)
+configure_file (project_config.cmake ${UtopiaOS_BINARY_DIR}/include/kernel/project_config.hpp)
 
 set (MODULE_KERNEL_SOURCES kernel_main.cpp buddy_resource.cpp)
 
