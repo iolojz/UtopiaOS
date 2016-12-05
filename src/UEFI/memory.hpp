@@ -104,16 +104,12 @@ namespace UtopiaOS
         
         class memory_map;
         
-        /** \class const_memory_map_iterator_v1
-         * \brief An iterator class that can be used to
+        /** \class const_memory_map_iterator
+         * \brief An iterator template that can be used to
          *        traverse the elements of a UEFI memory map.
-         *
-         * This iterator will always extract the UEFI memory
-         * descriptors as of EFI_MEMORY_DESCRIPTOR_VERSION 1
-         * no matter what higher version the UEFI memory map
-         * might support.
          */
-        class const_memory_map_iterator_v1
+        template<class Descriptor>
+        class const_memory_map_iterator
         {
         public:
             friend class UEFI::memory_map;
@@ -121,9 +117,9 @@ namespace UtopiaOS
             /** \name Iterator Traits
              * \{ */
             using iterator_category = std::random_access_iterator_tag;
-            using value_type = const memory_descriptor_v1;
-            using reference = const memory_descriptor_v1 &;
-            using pointer = const memory_descriptor_v1 *;
+            using value_type = const Descriptor;
+            using reference = const Descriptor &;
+            using pointer = const Descriptor *;
             using difference_type = std::make_signed<un>::type;
             /** \} */
             
@@ -131,63 +127,63 @@ namespace UtopiaOS
             un descriptor_size; /**< The real size of the memory descriptor */
         private:
             /** \brief Construct an iterator from data supplied by a UEFI memory map */
-            const_memory_map_iterator_v1( void *d, un s )
+            const_memory_map_iterator( void *d, un s )
             : descriptor( reinterpret_cast<pointer>( d ) ), descriptor_size( s ) {}
         public:
-            const_memory_map_iterator_v1 &operator++( void )
+            const_memory_map_iterator &operator++( void )
             {
                 descriptor = target::uintptr_to_ptr<value_type>(
                                     target::ptr_to_uintptr( descriptor ) + descriptor_size );
                 return *this;
             }
-            const_memory_map_iterator_v1 operator++( int )
-            { const_memory_map_iterator_v1 cp( *this ); ++(*this); return cp; }
+            const_memory_map_iterator operator++( int )
+            { const_memory_map_iterator cp( *this ); ++(*this); return cp; }
             
-            const_memory_map_iterator_v1 &operator--( void )
+            const_memory_map_iterator &operator--( void )
             {
                 descriptor = target::uintptr_to_ptr<value_type>(
                                     target::ptr_to_uintptr( descriptor ) - descriptor_size );
                 return *this;
             }
-            const_memory_map_iterator_v1 operator--( int )
-            { const_memory_map_iterator_v1 cp( *this ); --(*this); return cp; }
+            const_memory_map_iterator operator--( int )
+            { const_memory_map_iterator cp( *this ); --(*this); return cp; }
             
             reference operator*( void ) const { return *descriptor; }
             pointer operator->( void ) const { return descriptor; }
             
-            bool operator==( const const_memory_map_iterator_v1 &it ) const
+            bool operator==( const const_memory_map_iterator &it ) const
             { return descriptor == it.descriptor; }
-            bool operator!=( const const_memory_map_iterator_v1 &it ) const
+            bool operator!=( const const_memory_map_iterator &it ) const
             { return descriptor != it.descriptor; }
             
-            bool operator<( const const_memory_map_iterator_v1 &it ) const
+            bool operator<( const const_memory_map_iterator &it ) const
             { return descriptor < it.descriptor; }
-            bool operator<=( const const_memory_map_iterator_v1 &it ) const
+            bool operator<=( const const_memory_map_iterator &it ) const
             { return descriptor <= it.descriptor; }
-            bool operator>=( const const_memory_map_iterator_v1 &it ) const
+            bool operator>=( const const_memory_map_iterator &it ) const
             { return descriptor >= it.descriptor; }
-            bool operator>( const const_memory_map_iterator_v1 &it ) const
+            bool operator>( const const_memory_map_iterator &it ) const
             { return descriptor > it.descriptor; }
             
-            const_memory_map_iterator_v1 &operator+=( difference_type n )
+            const_memory_map_iterator &operator+=( difference_type n )
             {
                 descriptor = target::uintptr_to_ptr<value_type>(
                                 target::ptr_to_uintptr( descriptor ) + n * descriptor_size );
                 return *this;
             }
-            const_memory_map_iterator_v1 operator+( difference_type n ) const
-            { const_memory_map_iterator_v1 cp( *this ); cp += n; return cp; }
+            const_memory_map_iterator operator+( difference_type n ) const
+            { const_memory_map_iterator cp( *this ); cp += n; return cp; }
             
-            const_memory_map_iterator_v1 &operator-=( difference_type n )
+            const_memory_map_iterator &operator-=( difference_type n )
             {
                 descriptor = target::uintptr_to_ptr<value_type>(
                                 target::ptr_to_uintptr( descriptor ) - n * descriptor_size );
                 return *this;
             }
-            const_memory_map_iterator_v1 operator-( difference_type n ) const
-            { const_memory_map_iterator_v1 cp( *this ); cp -= n; return cp; }
+            const_memory_map_iterator operator-( difference_type n ) const
+            { const_memory_map_iterator cp( *this ); cp -= n; return cp; }
             
-            difference_type operator-( const_memory_map_iterator_v1 it ) const
+            difference_type operator-( const_memory_map_iterator it ) const
             {
                 return (target::ptr_to_uintptr( descriptor ) -
                         target::ptr_to_uintptr( it.descriptor )) / descriptor_size;
@@ -205,6 +201,8 @@ namespace UtopiaOS
          *        the result of a call to GetMemoryMap() in UEFI.
          * \warning The descriptor size and version can vary
          *          across different UEFI implementations!
+         * \note This structure needs to be API/ABI-stable
+         *       and hence may not be changed!
          */
         struct memory_map
         {
@@ -212,20 +210,6 @@ namespace UtopiaOS
             un number_of_descriptors;
             un descriptor_size;
             uint32 descriptor_version;
-            
-            /** \typedef const_iterator_v1
-             * \brief Iterator to traverse memory map as if
-             *        EFI_MEMORY_DESCRIPTOR_VERSION was set to 1.
-             */
-            using const_iterator_v1 = const_memory_map_iterator_v1;
-            
-            /** \name v1 traversal functions
-             * \{ */
-            const_iterator_v1 cbegin_v1( void ) const
-            { return const_iterator_v1( descriptors, descriptor_size ); }
-            const_iterator_v1 cend_v1( void ) const
-            { return (const_iterator_v1( descriptors, descriptor_size ) += number_of_descriptors); }
-            /* \} */
             
             /** \brief Returns the memory regions occpied by the memory map.
              * \returns The memory regions occupied by the memory_map object.
@@ -240,9 +224,24 @@ namespace UtopiaOS
                 return std::array<target::memory_region, 2>{ object_region, descriptor_region };
             }
         };
+        
+        /** \typedef const_memmap_iterator_v1
+         * \brief Iterator to traverse a memory map as if its
+         *        EFI_MEMORY_DESCRIPTOR_VERSION was set to 1.
+         */
+        using const_memmap_iterator_v1 = const_memory_map_iterator<memory_descriptor_v1>;
+        
+        /** \name v1 memory map traversal functions
+         * \{ */
+        const_memmap_iterator_v1 cbegin_v1( const memory_map &memmap ) const
+        { return const_iterator_v1( memmap.descriptors, memmap.descriptor_size ); }
+        const_memmap_iterator_v1 cend_v1( const memory_map &memmap ) const
+        { return (const_iterator_v1( memmap.descriptors, memmap.descriptor_size )
+                  += number_of_descriptors); }
+        /* \} */
     }
 }
 
 #endif
-    
+
 /** \} */

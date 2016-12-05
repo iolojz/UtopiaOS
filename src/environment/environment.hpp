@@ -24,8 +24,23 @@ namespace UtopiaOS
     /** \struct environment
      * \brief A struct containing all information that
      *        the kernel gets from the bootloader.
+     * \note This structure needs to be API/ABI-stable
+     *       and hence may not be changed!
      */
     struct environment
+    {
+        void *versioned_data; /**< A pointer to the data */
+        unsigned version; /**< The version of the structure */
+    }
+    
+    /** \struct environment_v1
+     * \brief A struct containing the information that
+     *        the kernel gets from a version 1 compliant
+     *        bootloader.
+     * \note This structure needs to be API/ABI-stable
+     *       and hence may not be changed!
+     */
+    struct environment_v1
     {
         /** \brief The memory region where the kernel
          *         binary is loaded */
