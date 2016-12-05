@@ -15,9 +15,3 @@ set (MODULE_KERNEL_SOURCES logger.cpp)
 
 add_library (io SHARED ${MODULE_KERNEL_SOURCES})
 set_target_properties (io PROPERTIES TARGET_TYPE library)
-
-# Append to target lists
-list (APPEND UTOPIAOS_SUBTARGETS io)
-
-# Propagate upwards
-set (UTOPIAOS_SUBTARGETS ${UTOPIAOS_SUBTARGETS} PARENT_SCOPE)

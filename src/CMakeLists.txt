@@ -9,6 +9,3 @@ set (MODULES environment io kernel target UEFI utils)
 foreach(module ${MODULES})
   add_subdirectory (${module})
 endforeach(module)
-
-# Propagate upwards
-set (UTOPIAOS_SUBTARGETS ${UTOPIAOS_SUBTARGETS} PARENT_SCOPE)
