@@ -13,8 +13,6 @@
 #include <cstdint>
 #include <cstddef>
 
-#include <utils/debug.hpp>
-
 namespace UtopiaOS
 {
     namespace target
@@ -113,8 +111,6 @@ namespace UtopiaOS
             static_assert( std::numeric_limits<std::uintptr_t>::max() >=
                           std::numeric_limits<std::size_t>::max(),
                           "This implementation cannot guarantee to work." );
-            utils::debug_assert( (ALIGN & (ALIGN - 1)) == 0,
-                                "alignment has to be a power of two" );
             
             std::size_t mask = ALIGN - 1; // ...0000011111...
             std::size_t diff = (ptr & mask);
