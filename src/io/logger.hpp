@@ -8,6 +8,8 @@
 #ifndef H_io_logger
 #define H_io_logger
 
+#include <target/config.hpp>
+
 #include "string.hpp"
 
 namespace UtopiaOS
