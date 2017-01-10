@@ -4,9 +4,6 @@ cmake_minimum_required (VERSION 3.3)
 project (UtopiaOS_io VERSION 0.1.0.0)
 configure_file (project_config.cmake ${UtopiaOS_BINARY_DIR}/include/io/project_config.hpp)
 
-# Debug build system
-set (CMAKE_VERBOSE_MAKEFILE ON)
-
 # Set the c++ standard that is required!
 set (CMAKE_CXX_STANDARD 14)
 set (CMAKE_CXX_STANDARD_REQUIRED ON)
