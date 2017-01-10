@@ -3,4 +3,20 @@ cmake_minimum_required (VERSION 3.3)
 
 project (UtopiaOS_environment VERSION 0.1.0.0)
 
-configure_file (project_config.cmake ${UtopiaOS_BINARY_DIR}/include/environment/project_config.hpp)
+set (MODULE_ENVIRONMENT_CONFIG ${UtopiaOS_BINARY_DIR}/include/environment/project_config.hpp)
+
+configure_file (project_config.cmake ${MODULE_ENVIRONMENT_CONFIG})
+
+set (MODULE_ENVIRONMENT_HEADERS
+  ${MODULE_ENVIRONMENT_CONFIG}
+  environment.hpp
+)
+set (MODULE_ENVIRONMENT_SOURCES)
+
+add_library (environment INTERFACE)
+target_sources (environment INTERFACE
+  ${MODULE_ENVIRONMENT_HEADERS}
+  ${MODULE_ENVIRONMENT_SOURCES}
+)
+
+add_dependencies (environment target UEFI utils)
