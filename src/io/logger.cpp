@@ -6,15 +6,17 @@
  *        of some standard logging classes
  */
 
+#if UTOPIAOS_HOSTED
+
 #include <cstdarg>
+#include <iostream>
 
 #include "logger.hpp"
 
 using namespace UtopiaOS;
 using namespace io;
 
-#if UTOPIAOS_HOSTED
-virtual void cout_logger::log( unsigned number_of_strings, ... )
+void cout_logger::log( unsigned number_of_strings, ... )
 {
     va_list args;
     va_start( args, number_of_strings );
