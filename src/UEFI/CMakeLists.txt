@@ -9,7 +9,7 @@ configure_file (project_config.cmake ${MODULE_UEFI_CONFIG})
 
 set (MODULE_UEFI_HEADERS
   ${MODULE_UEFI_CONFIG}
-  memory.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/memory.hpp
 )
 set (MODULE_UEFI_SOURCES)
 
@@ -19,4 +19,4 @@ target_sources (UEFI INTERFACE
   ${MODULE_UEFI_SOURCES}
 )
 
-add_dependencies (UEFI target)
+target_link_libraries (UEFI INTERFACE target)

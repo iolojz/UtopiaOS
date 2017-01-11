@@ -9,9 +9,9 @@ configure_file (project_config.cmake ${MODULE_TARGET_CONFIG})
 
 set (MODULE_TARGET_HEADERS
   ${MODULE_TARGET_CONFIG}
-  config.hpp
-  memory.hpp
-  UEFITypes.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/config.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/memory.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/UEFITypes.hpp
 )
 set (MODULE_TARGET_SOURCES)
 

@@ -9,7 +9,7 @@ configure_file (project_config.cmake ${MODULE_ENVIRONMENT_CONFIG})
 
 set (MODULE_ENVIRONMENT_HEADERS
   ${MODULE_ENVIRONMENT_CONFIG}
-  environment.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/environment.hpp
 )
 set (MODULE_ENVIRONMENT_SOURCES)
 
@@ -19,4 +19,4 @@ target_sources (environment INTERFACE
   ${MODULE_ENVIRONMENT_SOURCES}
 )
 
-add_dependencies (environment target UEFI utils)
+target_link_libraries (environment INTERFACE target UEFI utils)

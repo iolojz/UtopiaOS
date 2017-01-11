@@ -9,15 +9,15 @@ configure_file (project_config.cmake ${MODULE_UTILS_CONFIG})
 
 set (MODULE_UTILS_HEADERS
   ${MODULE_UTILS_CONFIG}
-  assert.hpp
-  bitwise.hpp
-  constructor.hpp
-  debug.hpp
-  destruct_deleter.hpp
-  dynarray.hpp
-  make_array.hpp
-  ranges.hpp
-  trap.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/assert.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/bitwise.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/constructor.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/debug.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/destruct_deleter.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/dynarray.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/make_array.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/ranges.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/trap.hpp
 )
 set (MODULE_UTILS_SOURCES)
 
@@ -27,4 +27,4 @@ target_sources (utils INTERFACE
   ${MODULE_UTILS_SOURCES}
 )
 
-add_dependencies (utils target io)
+target_link_libraries (utils INTERFACE io target)

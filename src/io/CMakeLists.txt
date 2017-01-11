@@ -21,4 +21,4 @@ add_library (io SHARED
   ${MODULE_IO_SOURCES}
 )
 
-add_dependencies (io target)
+target_link_libraries (io target)

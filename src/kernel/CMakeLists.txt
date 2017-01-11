@@ -33,4 +33,4 @@ else ()
   )
 endif ()
 
-add_dependencies (kernel target io environment UEFI utils)
+target_link_libraries (kernel io environment UEFI utils target)
