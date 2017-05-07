@@ -3,9 +3,9 @@ cmake_minimum_required (VERSION 3.3)
 
 project (UtopiaOS_environment VERSION 0.1.0.0)
 
-set (MODULE_ENVIRONMENT_CONFIG ${UtopiaOS_BINARY_DIR}/include/environment/project_config.hpp)
+set (MODULE_ENVIRONMENT_CONFIG ${UtopiaOS_BINARY_DIR}/include/environment/config.hpp)
 
-configure_file (project_config.cmake ${MODULE_ENVIRONMENT_CONFIG})
+configure_file (config.cmake ${MODULE_ENVIRONMENT_CONFIG})
 
 set (MODULE_ENVIRONMENT_HEADERS
   ${MODULE_ENVIRONMENT_CONFIG}

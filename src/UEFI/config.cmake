@@ -1,7 +1,7 @@
-#ifndef H_UtopiaOS_UEFI_project_config
-#define H_UtopiaOS_UEFI_project_config
+#ifndef H_UtopiaOS_UEFI_config
+#define H_UtopiaOS_UEFI_config
 
-#include "../project_config.hpp"
+#include "../config.hpp"
 
 #define UTOPIAOS_UEFI_VERSION_MAJOR @UtopiaOS_UEFI_VERSION_MAJOR@
 #define UTOPIAOS_UEFI_VERSION_MINOR @UtopiaOS_UEFI_VERSION_MINOR@

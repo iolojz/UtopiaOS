@@ -7,7 +7,7 @@
 
 #include "kernel_main.hpp"
 
-#include <target/config.hpp>
+#include <target/target.hpp>
 #include <environment/environment.hpp>
 #include <utils/trap.hpp>
 #include <utils/assert.hpp>

@@ -1,7 +1,7 @@
-#ifndef H_UtopiaOS_utils_project_config
-#define H_UtopiaOS_utils_project_config
+#ifndef H_UtopiaOS_utils_config
+#define H_UtopiaOS_utils_config
 
-#include "../project_config.hpp"
+#include "../config.hpp"
 
 #define UTOPIAOS_UTILS_VERSION_MAJOR @UtopiaOS_utils_VERSION_MAJOR@
 #define UTOPIAOS_UTILS_VERSION_MINOR @UtopiaOS_utils_VERSION_MINOR@

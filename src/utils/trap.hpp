@@ -9,7 +9,7 @@
 #ifndef H_utils_trap
 #define H_utils_trap
 
-#include <target/config.hpp>
+#include <target/target.hpp>
 
 namespace UtopiaOS
 {

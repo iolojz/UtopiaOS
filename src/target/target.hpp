@@ -11,7 +11,7 @@
 #ifndef H_target_config
 #define H_target_config
 
-#include <target/project_config.hpp>
+#include <target/config.hpp>
 
 /** \def UTOPIAOS_ENABLE_DEBUG_ASSERTS
  * \brief Specifies whether assertions meant for

@@ -20,7 +20,7 @@ else ()
   set (UTOPIAOS_HOSTED YES)
 endif ()
 
-configure_file (project_config.cmake include/project_config.hpp)
+configure_file (config.cmake include/config.hpp)
 include_directories (${PROJECT_BINARY_DIR}/include)
 
 add_subdirectory (src)

@@ -3,9 +3,9 @@ cmake_minimum_required (VERSION 3.3)
 
 project (UtopiaOS_utils VERSION 0.1.0.0)
 
-set (MODULE_UTILS_CONFIG ${UtopiaOS_BINARY_DIR}/include/utils/project_config.hpp)
+set (MODULE_UTILS_CONFIG ${UtopiaOS_BINARY_DIR}/include/utils/config.hpp)
 
-configure_file (project_config.cmake ${MODULE_UTILS_CONFIG})
+configure_file (config.cmake ${MODULE_UTILS_CONFIG})
 
 set (MODULE_UTILS_HEADERS
   ${MODULE_UTILS_CONFIG}
