@@ -9,15 +9,14 @@
 
 #include "buddy_resource.hpp"
 
-#include <target/config.hpp>
-#include <target/memory.hpp>
+#include "target/target.hpp"
+#include "target/memory.hpp"
 
 #ifdef UTOPIAOS_ALLOCA_WITH_ALIGN_HEADER
 #include UTOPIAOS_ALLOCA_WITH_ALIGN_HEADER
 #endif
 
-#include <utils/bitwise.hpp>
-#include <utils/debug.hpp>
+#include "utils/debug.hpp"
 
 #include <memory_resource>
 #include <limits>

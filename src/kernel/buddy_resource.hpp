@@ -10,20 +10,9 @@
 #ifndef H_kernel_buddy_resource
 #define H_kernel_buddy_resource
 
-#include <target/target.hpp>
-
-#ifdef UTOPIAOS_ALLOCA_WITH_ALIGN_HEADER
-#include UTOPIAOS_ALLOCA_WITH_ALIGN_HEADER
-#endif
-
-#include <utils/bitwise.hpp>
-#include <utils/debug.hpp>
+#include "utils/bitwise.hpp"
 
 #include <memory_resource>
-#include <limits>
-#include <cstddef>
-#include <utility>
-#include <cstring>
 
 namespace UtopiaOS
 {

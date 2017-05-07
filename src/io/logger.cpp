@@ -8,8 +8,8 @@
 
 #if UTOPIAOS_HOSTED
 
-#include <cstdarg>
-#include <iostream>
+#include "cstdarg"
+#include "iostream"
 
 #include "logger.hpp"
 

@@ -13,9 +13,9 @@
 #ifndef H_environment_environment
 #define H_environment_environment
 
-#include <target/memory.hpp>
-#include <UEFI/memory.hpp>
-#include <utils/make_array.hpp>
+#include "target/memory.hpp"
+#include "UEFI/memory.hpp"
+#include "utils/make_array.hpp"
 
 #include <boost/range/join.hpp>
 

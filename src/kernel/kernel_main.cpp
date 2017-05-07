@@ -7,10 +7,10 @@
 
 #include "kernel_main.hpp"
 
-#include <target/target.hpp>
-#include <environment/environment.hpp>
-#include <utils/trap.hpp>
-#include <utils/assert.hpp>
+#include "target/target.hpp"
+#include "environment/environment.hpp"
+#include "utils/trap.hpp"
+#include "utils/assert.hpp"
 
 #ifdef UTOPIAOS_ALLOCA_WITH_ALIGN_HEADER
 #include UTOPIAOS_ALLOCA_WITH_ALIGN_HEADER

@@ -16,8 +16,10 @@ include_directories (SYSTEM ${Boost_INCLUDE_DIRS})
 
 if (${CMAKE_CROSSCOMPILING})
   set (UTOPIAOS_HOSTED NO)
+  set (UTOPIAOS_HOSTED_ASNUMBER 0)
 else ()
   set (UTOPIAOS_HOSTED YES)
+  set (UTOPIAOS_HOSTED_ASNUMBER 1)
 endif ()
 
 configure_file (config.cmake include/config.hpp)

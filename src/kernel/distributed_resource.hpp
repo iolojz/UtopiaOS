@@ -17,8 +17,8 @@
 #include <memory>
 #include <limits>
 
-#include <utils/dynarray.hpp>
-#include <target/memory.hpp>
+#include "utils/dynarray.hpp"
+#include "target/memory.hpp"
 
 namespace UtopiaOS
 {

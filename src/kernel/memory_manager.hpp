@@ -16,10 +16,10 @@
 #include "distributed_resource.hpp"
 #include "buddy_resource.hpp"
 
-#include <target/config.hpp>
-#include <utils/debug.hpp>
-#include <utils/destruct_deleter.hpp>
-#include <utils/ranges.hpp>
+#include "target/config.hpp"
+#include "utils/debug.hpp"
+#include "utils/destruct_deleter.hpp"
+#include "utils/ranges.hpp"
 
 #ifdef UTOPIAOS_ALLOCA_WITH_ALIGN_HEADER
 #include UTOPIAOS_ALLOCA_WITH_ALIGN_HEADER

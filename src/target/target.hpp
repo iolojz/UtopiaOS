@@ -60,14 +60,6 @@ __builtin_alloca_with_align( (size), ((CHAR_BIT)*(alignment)) )
 #define UTOPIAOS_UEFI_UINT64 unsigned long
 /** \} */
 
-/** \def UTOPIAOS_HOSTED
- * \brief Specifies whether to build a hosted
- *        variant of the OS.
- * \todo This should be set automatically
- *       by CMake.
- */
-#define UTOPIAOS_HOSTED 1
-
 #endif /* H_common_target_headers */
 
 /** \} */

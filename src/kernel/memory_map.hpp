@@ -9,8 +9,8 @@
 #ifndef H_kernel_memory
 #define H_kernel_memory
 
-#include <utils/dynarray.hpp>
-#include <utils/debug.hpp>
+#include "utils/dynarray.hpp"
+#include "utils/debug.hpp"
 
 #include "constants.hpp"
 

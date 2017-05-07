@@ -11,7 +11,7 @@
 #ifndef H_kernel_constants
 #define H_kernel_constants
 
-#include <target/config.hpp>
+#include "target/target.hpp"
 
 namespace UtopiaOS
 {
