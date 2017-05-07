@@ -10,7 +10,7 @@
 #ifndef H_kernel_buddy_resource
 #define H_kernel_buddy_resource
 
-#include <target/config.hpp>
+#include <target/target.hpp>
 
 #ifdef UTOPIAOS_ALLOCA_WITH_ALIGN_HEADER
 #include UTOPIAOS_ALLOCA_WITH_ALIGN_HEADER
