@@ -12,7 +12,7 @@
 
 namespace UtopiaOS
 {
-    class environment;
+    struct environment;
     
     /** \namespace UtopiaOS::kernel
      * \brief Everything in the module Kernel goes

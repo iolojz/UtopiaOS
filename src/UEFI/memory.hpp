@@ -10,8 +10,8 @@
 #ifndef H_UEFI_memory
 #define H_UEFI_memory
 
-#include <target/UEFItypes.hpp>
-#include <target/memory.hpp>
+#include "target/UEFITypes.hpp"
+#include "target/memory.hpp"
 
 #include <iterator>
 #include <array>
@@ -102,7 +102,7 @@ namespace UtopiaOS
             uint64 attribute;
         };
         
-        class memory_map;
+        struct memory_map;
         
         /** \class const_memory_map_iterator
          * \brief An iterator template that can be used to
@@ -220,7 +220,7 @@ namespace UtopiaOS
                 target::memory_region descriptor_region = { target::ptr_to_uintptr( descriptors ),
                     sizeof( number_of_descriptors * descriptor_size ) };
                 
-                return std::array<target::memory_region, 2>{ object_region, descriptor_region };
+                return std::array<target::memory_region, 2>{ {object_region, descriptor_region } };
             }
         };
         

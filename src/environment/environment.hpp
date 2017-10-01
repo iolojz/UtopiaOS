@@ -61,10 +61,10 @@ namespace UtopiaOS
         auto occupied_memory( void ) const
         {
             auto memmap_omd = memmap.occupied_memory();
-            auto this_omd = std::array<target::memory_region, 1>{ target::memory_region{
+            std::array<target::memory_region, 1> this_omd = { { target::memory_region{
                 target::ptr_to_uintptr( this ),
                 sizeof( environment )
-            } };
+            } } };
             
             auto combined_view = boost::join( memmap_omd, this_omd );
             constexpr auto size = memmap_omd.size() + this_omd.size();

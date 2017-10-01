@@ -24,28 +24,6 @@
 
 using namespace UtopiaOS;
 
-/** \brief Effectively disable dynamic memory management
- *         by always throwing a std::bad_alloc exception
- * \param[in] size The size of the requested memory block
- * \returns only nominally, will never happen!
- */
-void *operator new( std::size_t size )
-{
-    throw std::bad_alloc();
-}
-
-/** \brief Effectively disable dynamic memory management
- *         by always throwing a std::bad_alloc exception
- * \param[in] size The size of the requested memory block
- * \param[in] alignment The alignment of the requested
- *            memory block
- * \returns only nominally, will never happen!
- */
-void *operator new( std::size_t size, std::align_val_t alignment )
-{
-    throw std::bad_alloc();
-}
-
 namespace
 {
     using namespace kernel;
@@ -57,7 +35,7 @@ namespace
     /** \brief Create a simple memory manager from the memory data.
      * \param[in] env The environment provided by the bootloader
      */
-    unsynchronized_memory_manager setup_memory_manager( const environment *env );
+    unsynchronized_memory_manager setup_memory_manager( const environment_v1 *env );
     
     /** \brief Become a scheduler and start the memory managing process.
      * \param[in] mm The current memory manager whose memory should be used
@@ -94,9 +72,9 @@ namespace
         using memory_descriptor_allocator = std::pmr::polymorphic_allocator<memory_descriptor>;
         using kernel_memory_map = memory_map<memory_descriptor_allocator>;
         
-        auto kernel_image_region = environment->kernel_image_region;
-        auto kernel_stack_region = environment->kernel_stack_region;
-        auto &UEFI_memmap = environment->memmap;
+        auto kernel_image_region = env->kernel_image_region;
+        auto kernel_stack_region = env->kernel_stack_region;
+        auto &UEFI_memmap = env->memmap;
         
         /** \todo Perform some runtime size check */
         
@@ -108,11 +86,11 @@ namespace
         
         kernel_memory_map memmap( UEFI_memmap, &memmap_memory_resource );
         
-        auto environment_omd = environment->occupied_memory();
-        std::array<target::memory_region, 2> kernel_omd = {
+        auto environment_omd = env->occupied_memory();
+        std::array<target::memory_region, 2> kernel_omd = { {
             target::memory_region( kernel_image_region ),
             target::memory_region( kernel_stack_region )
-        };
+        } };
         
         auto omd_view = boost::join( environment_omd, kernel_omd );
         std::sort( boost::begin( omd_view ), boost::end( omd_view ) );

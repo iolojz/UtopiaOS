@@ -177,16 +177,18 @@ namespace UtopiaOS
             }
         public:
             /** \brief Construct a \a distributed_resource
-             *         object from a list of upstream
+             *         object from a range of upstream
              *         memory resource objects
-             * \param[in] upstream_resources The list of
-             *            upstream resources.
+             * \tparam RandomAccessIterator The iterator type
+             * \param[in] resource_begin The begin of the
+             *                           resource range.
+             * \param[in] resource_end The end of the
+             *                         resource range.
              */
-            distributed_resource( const
-                           std::initializer_list<std::pmr::memory_resource *>
-                           &upstream_resources )
-            : resources( store_resources( upstream_resources.begin(),
-                                         upstream_resources.end() ) )
+            template<class RandomAccessIterator>
+            distributed_resource( RandomAccessIterator begin,
+                                 RandomAccessIterator end )
+            : resources( store_resources( begin, end ) )
             {}
         };
     }

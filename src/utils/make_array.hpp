@@ -66,9 +66,9 @@ namespace UtopiaOS
             struct make_array_it<ForwardIterator, 0, T>
             {
                 template<class... Args>
-                static auto iterate( ForwardIterator begin, Args &&...args )
+                static auto iterate( ForwardIterator, Args &&...args )
                 {
-                    return std::array<T, sizeof...(Args)>{ std::forward<Args>( args )... };
+                    return std::array<T, sizeof...(Args)>{ { std::forward<Args>( args )... } };
                 }
             };
             
@@ -91,7 +91,7 @@ namespace UtopiaOS
             struct make_array_copy<0, T>
             {
                 template<class Init, class... Args>
-                static auto copy( const Init &init, Args &&...args )
+                static auto copy( const Init &, Args &&...args )
                 {
                     return std::array<T, sizeof...(Args)>{ std::forward<Args>( args )... };
                 }

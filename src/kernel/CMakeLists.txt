@@ -9,7 +9,6 @@ configure_file (config.cmake ${MODULE_KERNEL_CONFIG})
 
 set (MODULE_KERNEL_HEADERS
   ${MODULE_KERNEL_CONFIG}
-  buddy_resource.hpp
   constants.hpp
   distributed_resource.hpp
   kernel_main.hpp
@@ -18,7 +17,6 @@ set (MODULE_KERNEL_HEADERS
 )
 set (MODULE_KERNEL_SOURCES
   kernel_main.cpp
-  buddy_resource.cpp
 )
 
 if (UTOPIAOS_HOSTED)

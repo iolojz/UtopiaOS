@@ -1,4 +1,4 @@
-#/** \ingroup kernel
+/** \ingroup kernel
 * \{
 *
 * \file kernel/memory_manager.hpp
@@ -14,7 +14,6 @@
 
 #include "memory_map.hpp"
 #include "distributed_resource.hpp"
-#include "buddy_resource.hpp"
 
 #include "target/config.hpp"
 #include "utils/debug.hpp"
@@ -33,8 +32,8 @@
 #include <iterator>
 
 #include <boost/hana.hpp>
-#include <boost/hana/ext/std/array.hpp>
 #include <boost/hana/ext/std/integer_sequence.hpp>
+#include <boost/iterator/transform_iterator.hpp>
 
 namespace UtopiaOS
 {
@@ -56,7 +55,6 @@ namespace UtopiaOS
             class memmap_memory_tag {};
             class omd_memory_tag {};
             class avm_memory_tag {};
-            class mr_memory_tag {};
             /** \} */
             
             /** \brief A tuple containing the <em> Memory Tags </em>
@@ -64,8 +62,7 @@ namespace UtopiaOS
              */
             static constexpr auto memory_tags = boost::hana::tuple_t<memmap_memory_tag,
                                                        omd_memory_tag,
-                                                       avm_memory_tag,
-                                                       mr_memory_tag>;
+                                                       avm_memory_tag>;
             
             /** \brief A map specifying the order of the <em> Memory Tags </em>
              *         in the \a memory_tags tuple
@@ -77,74 +74,28 @@ namespace UtopiaOS
                                       ),
                 boost::hana::make_map );
             
-            static_assert( tag_index[boost::hana::type_c<mr_memory_tag>] ==
-                          boost::hana::length( memory_tags ) - boost::hana::size_c<1>,
-                          "The mr_memory_tag must be the last tag!" );
-            
-            /** \brief Same as \a memory_tags but with the mr_memory_tag removed */
-            static constexpr auto non_mr_tags = boost::hana::remove_at( memory_tags,
-                          tag_index[boost::hana::type_c<mr_memory_tag>] );
-            
             /** \brief The number of memory request that will be made upon construction
                        of the \a unsynchronized_memory_manager
              */
-            static constexpr auto number_of_memory_requests = boost::hana::length( memory_tags );
+            static constexpr auto number_of_memory_requests = boost::hana::length( memory_tags ) + 1u;
             
-            /** \brief The number of memory resources that need to be created
-             *         upon construction of the \a unsynchronized_memory_manager
+            /** \name Internal memory resources
+             *  \brief The memory resource types used internally by the \a memory_manager
+             *  \{
              */
-            static constexpr auto number_of_memory_resources = boost::hana::length( non_mr_tags );
-            
-            /** \brief The deleter type used for the memory resources */
-            using resource_deleter = utils::destruct_deleter<std::pmr::monotonic_buffer_resource>;
-            
-            /** \brief A smart pointer managing the memory resources */
-            using resource_ptr = std::unique_ptr<std::pmr::monotonic_buffer_resource,
-                                                                      resource_deleter>;
-            
-            static constexpr auto mr_type_tuple = boost::hana::replicate<
-                boost::hana::tuple_tag
-            >( boost::hana::type_c<resource_ptr>, boost::hana::length( non_mr_tags ) );
-            
-            /** \brief The memory resources used internally by
-             * the unsynchronized_memory_manager
-             */
-            decltype( boost::hana::unpack( mr_type_tuple,
-                     boost::hana::template_<boost::hana::tuple> ))::type memory_resources;
-            
-            /** \brief A memory resource object combining
-             *         the above \a memory_resources list
-             *         into one memory_resource object.
-             */
-            distributed_resource combined_resource;
-            
-            /** \name Allocator Types
-             * \brief Used by different managment objects that are part of the
-             *        unsynchronized_memory_manager object.
-             * \{
-             */
-            using memory_descriptor_allocator = std::pmr::polymorphic_allocator<memory_descriptor>;
-            using memory_region_allocator = std::pmr::polymorphic_allocator<target::memory_region>;
-            using buffer_allocator = std::pmr::polymorphic_allocator<std::pmr::monotonic_buffer_resource>;
-            /* \} */
-            
-            /** \name Memory Request Types
-             * \brief Used upon memory allocation by the <em> Allocator Types </em>
-             * \{
-             */
-            using omd_request = target::memory_request<
-                alignof(std::allocator_traits<memory_region_allocator>::value_type)
+            static constexpr auto number_of_iresources = boost::hana::length( memory_tags );
+            using iresource = std::pmr::monotonic_buffer_resource;
+            using iresource_ptr = std::unique_ptr<
+                iresource,
+                utils::destruct_deleter<iresource>
             >;
-            using mr_request = target::memory_request<
-                alignof(std::allocator_traits<buffer_allocator>::value_type)
-            >;
-            using avm_request = target::memory_request<
-                alignof(std::allocator_traits<buffer_allocator>::value_type)
-            >;
+            std::array<iresource_ptr, number_of_iresources> iresources;
             /** \} */
             
             /** \brief The memory map */
-            memory_map<memory_descriptor_allocator> memmap;
+            memory_map<
+                std::pmr::polymorphic_allocator<memory_descriptor>
+            > memmap;
             
             /** \brief The occupied memory description.
              * An array specifying which memory regions are occupied.
@@ -153,7 +104,10 @@ namespace UtopiaOS
              * contain special memory regions that are reserved for
              * the \a unsynchronized_memory_manager object itself.
              */
-            utils::dynarray<target::memory_region, memory_region_allocator> omd;
+            utils::dynarray<
+                target::memory_region,
+                std::pmr::polymorphic_allocator<target::memory_region>
+            > omd;
             
             /** \brief The available memory.
              * An array of allocators that can be used to manage
@@ -163,7 +117,21 @@ namespace UtopiaOS
              * that is not occupied in the sense described by
              * the \a omd.
              */
-            utils::dynarray<std::pmr::monotonic_buffer_resource, buffer_allocator> available_memory;
+            utils::dynarray<
+                std::pmr::monotonic_buffer_resource,
+                std::pmr::polymorphic_allocator<std::pmr::monotonic_buffer_resource>
+            > available_memory;
+            
+            /** \brief The \a std::memory_resource object managing
+             *         the available memory.
+             */
+            distributed_resource avm_resource;
+            
+            /** \brief A pool \a std::memory_resource object that
+             *         is exposed for general purpose allocations
+             *         of the available memory.
+             */
+            std::pmr::unsynchronized_pool_resource avm_pool_resource;
             
             /** \class memory_requirement
              * \brief A Function object returning the memory
@@ -177,8 +145,8 @@ namespace UtopiaOS
             {
             private:
                 const MemMap &memmap; /**< A reference to the memory map */
-                const RandomAccessIterator omd_begin; /** Begin of the omd */
-                const RandomAccessIterator omd_end; /** End of the omd */
+                const RandomAccessIterator omd_begin; /**< Begin of the omd */
+                const RandomAccessIterator omd_end; /**< End of the omd */
             public:
                 /** \brief Construct a memory_requirement object
                  * \param[in] mm The memory map
@@ -195,7 +163,11 @@ namespace UtopiaOS
                 { return memmap.maximum_copy_requirement(); }
                 
                 /** \brief Overload for \a omd_memory_tag */
-                omd_request operator()( boost::hana::basic_type<omd_memory_tag> )
+                target::memory_request<
+                    alignof(std::allocator_traits<
+                                typename decltype(omd)::allocator_type
+                            >::value_type)
+                > operator()( boost::hana::basic_type<omd_memory_tag> )
                 {
                     std::size_t number_of_new_omds = number_of_memory_requests;
                     auto min_omds = omd_end - omd_begin;
@@ -204,15 +176,12 @@ namespace UtopiaOS
                     return {sizeof(typename decltype(omd)::value_type) * max_omds};
                 }
                 
-                /** \brief Overload for \a mr_memory_tag */
-                constexpr mr_request operator()( boost::hana::basic_type<mr_memory_tag> )
-                {
-                    return { number_of_memory_resources *
-                        sizeof(typename resource_ptr::element_type) };
-                }
-                
                 /** \brief Overload for \a avm_memory_tag */
-                avm_request operator()( boost::hana::basic_type<avm_memory_tag> )
+                target::memory_request<
+                    alignof(std::allocator_traits<
+                                typename decltype(available_memory)::allocator_type
+                            >::value_type)
+                > operator()( boost::hana::basic_type<avm_memory_tag> )
                 {
                     auto max_new_avm_regions = number_of_memory_requests;
                     auto min_avm_regions = number_of_avm_regions( memmap,
@@ -279,60 +248,67 @@ namespace UtopiaOS
                         throw std::invalid_argument( "Occupied memory not contained in memory map" );
                 } );
                 
-                // Get the memory request for every memory tag
+                // Get the memory requirement for every memory tag
                 auto memory_requests = hana::transform( memory_tags,
                                             get_memory_requirement( memmap,
                                                                    boost::begin( omd_view ),
                                                                    boost::end( omd_view ) ) );
                 
-                // Find an upper bound on how many av regions there are
-                auto av_request = memory_requests[tag_index[hana::type_c<avm_memory_tag>]];
-                std::size_t max_av_regions = (av_request.size /
-                                   sizeof(typename decltype(available_memory)::value_type));
-                
                 // Allocate space for storing the memory regions that
                 // are used to meet the above requests.
-                auto request_omds = hana::replicate<hana::tuple_tag>( target::memory_region(),
+                auto internal_omds = hana::replicate<hana::tuple_tag>( target::memory_region(),
                                                                      hana::length( memory_tags ) );
                 
                 // Allocate the space requested in the \a memory_requests
                 // above and calculate the new omd, that marks these
                 // allocated regions as occupied.
-                auto new_omd = hana::fold_left( memory_tags,
+                auto omd_stage2 = hana::fold_left( memory_tags,
                                                omd_view,
                     [&] ( const auto &omd, auto tag ) {
                         const auto &request = memory_requests[tag_index[tag]];
                         
-                        request_omds[tag_index[tag]] = meet_request( memmap,
-                                                                    boost::begin( omd ),
-                                                                    boost::end( omd ),
-                                                                    request );
+                        internal_omds[tag_index[tag]] = meet_request( memmap,
+                                                                     boost::begin( omd ),
+                                                                     boost::end( omd ),
+                                                                     request );
                         return utils::sorted_range_insert_reference( omd,
-                                                             request_omds[tag_index[tag]] );
+                                                             internal_omds[tag_index[tag]] );
                     }
                 );
                 
-                auto mr_omd = request_omds[tag_index[hana::type_c<mr_memory_tag>]];
+                // We also need to store the internal resource objects
+                // somewhere.
+                target::memory_request<
+                    alignof(std::pmr::monotonic_buffer_resource)
+                > iresource_request = { hana::length( memory_tags ) *
+                              sizeof(std::pmr::monotonic_buffer_resource) };
+                auto iresource_omd = meet_request( memmap,
+                                                  boost::begin( omd_stage2 ),
+                                                  boost::end( omd_stage2 ),
+                                                  iresource_request );
+                auto omd_final = utils::sorted_range_insert_reference( omd_stage2,
+                                                             iresource_omd );
                 
-                // Get the space designated to store the memory resource objects
-                auto mr_memory = target::uintptr_to_ptr<
-                    std::allocator_traits<buffer_allocator>::pointer
-                >( mr_omd.base() );
+                // An array of iresource_ptrs to the internal resource
+                // objects.
+                std::array<iresource_ptr, hana::length( memory_tags )> iresources;
                 
-                // Put the memory resource objects into place
-                auto memory_resources = boost::hana::transform( non_mr_tags,
-                          [&] ( auto tag ) {
-                    const auto &region = request_omds[tag_index[tag]];
-                    return resource_ptr( new (mr_memory + tag_index[tag])
-                            std::allocator_traits<buffer_allocator>::value_type( region.base_ptr(),
-                                                                                region.size ) );
+                // Put the internal memory resource objects into place
+                hana::for_each( memory_tags, [&] ( auto tag ) {
+                    const auto &region = internal_omds[tag_index[tag]];
+                    auto base = target::uintptr_to_ptr<
+                        std::pmr::monotonic_buffer_resource
+                    >( iresource_omd.base() );
+                    
+                    iresources[tag_index[tag]] =
+                        iresource_ptr( new (base + tag_index[tag]) 
+                             iresource( region.base_ptr(), region.size ) );
                 } );
                 
                 return unsynchronized_memory_manager( memmap,
-                                                     boost::begin( new_omd ),
-                                                     boost::end( new_omd ),
-                                                     max_av_regions,
-                                                     std::move( memory_resources ) );
+                                                     boost::begin( omd_final ),
+                                                     boost::end( omd_final ),
+                                                     std::move( iresources ) );
             }
             
             /** \brief Try to fulfil a memory request
@@ -348,7 +324,9 @@ namespace UtopiaOS
              * \note Throws a \ std::runtime_error if the request
              * could not be fulfilled.
              *
-             * \returns A memory region that fulfils the request
+             * \returns A memory region that fulfils the request,
+             *          where \a base() always has the 
+             *          requested alignment.
              */
             template<class MemMap, class InputIterator, class MemRequest>
             static target::memory_region meet_request( const MemMap &memmap,
@@ -524,13 +502,14 @@ namespace UtopiaOS
             enumerate_avm( const MemMap &memmap,
                           InputIterator omd_begin,
                           InputIterator omd_end,
-                          std::size_t max_av_regions,
-                          buffer_allocator &&alloc )
+                          decltype(available_memory)::allocator_type &&alloc )
             {
                 /** \todo Perform some runtime size check." */
                 
+                auto num_av_regions = number_of_avm_regions( memmap, omd_begin, omd_end );
+                
                 auto av_regions = reinterpret_cast<target::memory_region *>(
-                         UTOPIAOS_ALLOCA_WITH_ALIGN( max_av_regions * sizeof(target::memory_region),
+                         UTOPIAOS_ALLOCA_WITH_ALIGN( num_av_regions * sizeof(target::memory_region),
                                                     alignof(target::memory_region) ) );
                 target::memory_region *current = av_regions;
                 
@@ -541,11 +520,11 @@ namespace UtopiaOS
                 transform_avm( memmap, omd_begin, omd_end, assign );
                 
                 using av_container = decltype(available_memory);
-                using buffer = typename av_container::value_type;
-                auto buffer_constructor = [] ( buffer *buf,
+                using buffer_resource = typename av_container::value_type;
+                auto buffer_constructor = [] ( decltype(available_memory)::value_type *buf,
                                               const target::memory_region &region ) {
-                    new (buf) buffer( target::uintptr_to_ptr<void>( region.base() ),
-                                     region.size );
+                    new (buf) buffer_resource( target::uintptr_to_ptr<void>( region.base() ),
+                                              region.size );
                 };
                 
                 return av_container( &(av_regions[0]),
@@ -554,28 +533,11 @@ namespace UtopiaOS
                                     buffer_constructor );
             }
             
-            /** \struct create_encapsulation_resource
-             * \brief Function object to ease construction
-             *        of the encapsulating memory resource.
-             */
-            struct create_combined_resource
+            struct address_of
             {
-                /** \brief Creates an encapsulating memory resource
-                 *         from a list of memory resource pointers.
-                 * \returns A memory resource object that encapsulates
-                 *          the given memory resources.
-                 * \tparam Resources The resource types
-                 * \param[in] resources The given memory resources
-                 *
-                 * \note The arguments can also be smart pointers.
-                 */
-                template<class... Resources>
-                auto operator()( Resources &&...resources )
-                {
-                    return decltype(combined_resource){
-                        std::addressof( *resources )...
-                    };
-                }
+                template<class T>
+                auto operator()( T &&t ) const
+                { return std::addressof( std::forward<T>( t ) ); }
             };
             
             /** \brief Construct an \a unsynchronized_memory_manager from
@@ -598,18 +560,19 @@ namespace UtopiaOS
             unsynchronized_memory_manager( const MemMap &mm,
                                           InputIterator omd_begin,
                                           InputIterator omd_end,
-                                          std::size_t max_av_regions,
                                           Resources &&mr )
-            : memory_resources( std::move( mr ) ),
-            combined_resource( boost::hana::unpack( memory_resources,
-                                                   create_combined_resource() ) ),
+            : iresources( std::move( mr ) ),
             memmap( mm,
-                   memory_resources[tag_index[boost::hana::type_c<memmap_memory_tag>]].get() ),
+                   iresources[tag_index[boost::hana::type_c<memmap_memory_tag>]].get() ),
             omd( omd_begin, omd_end,
-                memory_resources[tag_index[boost::hana::type_c<omd_memory_tag>]].get() ),
+                iresources[tag_index[boost::hana::type_c<omd_memory_tag>]].get() ),
             available_memory( enumerate_avm( memmap, omd.cbegin(), omd.cend(),
-                                            max_av_regions,
-                 memory_resources[tag_index[boost::hana::type_c<avm_memory_tag>]].get() ) )
+                 iresources[tag_index[boost::hana::type_c<avm_memory_tag>]].get() ) ),
+            avm_resource( boost::make_transform_iterator( available_memory.begin(),
+                                                         address_of() ),
+                         boost::make_transform_iterator( available_memory.end(),
+                                                         address_of() ) ),
+            avm_pool_resource( &avm_resource )
             {}
         public:
             /** \brief Construct the memory manager from a memory map
@@ -660,7 +623,7 @@ namespace UtopiaOS
              */
             std::pmr::memory_resource *exposed_resource( void )
             {
-                return &combined_resource;
+                return &avm_resource;
             }
         };
     }
