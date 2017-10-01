@@ -549,7 +549,7 @@ namespace UtopiaOS
                 };
                 
                 return av_container( &(av_regions[0]),
-                                    &(av_regions[max_av_regions]),
+                                    current,
                                     std::move( alloc ),
                                     buffer_constructor );
             }
