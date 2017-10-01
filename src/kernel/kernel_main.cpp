@@ -78,7 +78,7 @@ namespace
      * exception handling
      */
     
-    auto memory_manager = setup_memory_manager( env );
+    auto memory_manager = setup_memory_manager( environment );
     morph_into_scheduler_outsource_memory( std::move( memory_manager ) );
 }
 
@@ -86,12 +86,8 @@ namespace
 {
     using namespace kernel;
     
-    unsynchronized_memory_manager setup_memory_manager( const environment *env )
+    unsynchronized_memory_manager setup_memory_manager( const environment_v1 *env )
     {
-        utils::runtime_assert( env->least_compatible_version == 1,
-                              "Environment has incompatible version." );
-        auto environment = reinterpret_cast<const environment_v1 *>( env->data );
-        
         using namespace UtopiaOS;
         using namespace kernel;
         
@@ -118,12 +114,12 @@ namespace
             target::memory_region( kernel_stack_region )
         };
         
-        auto combined_view = boost::join( environment_omd, kernel_omd );
-        std::sort( boost::begin( combined_view ), boost::end( combined_view ) );
+        auto omd_view = boost::join( environment_omd, kernel_omd );
+        std::sort( boost::begin( omd_view ), boost::end( omd_view ) );
         
         return unsynchronized_memory_manager( memmap,
-                                             boost::begin( combined_view ),
-                                             boost::end( combined_view ) );
+                                             boost::begin( omd_view ),
+                                             boost::end( omd_view ) );
     }
 }
 

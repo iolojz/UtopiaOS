@@ -25,10 +25,6 @@ namespace UtopiaOS
         static_assert( pagesize != 0, "pagesize must not be zero" );
         static_assert( ((pagesize - 1) & pagesize) == 0,
                       "pagesize must be a power of two" );
-        
-        /** \todo Make these vales sensible! */
-        static constexpr std::size_t minimum_block_size = 1U << 6;
-        static constexpr std::size_t maximum_block_size = 1U << 12;
     }
 }
 
