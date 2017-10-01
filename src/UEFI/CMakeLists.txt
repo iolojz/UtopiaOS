@@ -1,5 +1,5 @@
 ########### module: UEFI #########
-cmake_minimum_required (VERSION 3.3)
+cmake_minimum_required (VERSION 3.8)
 
 project (UtopiaOS_UEFI VERSION 0.1.0.0)
 
