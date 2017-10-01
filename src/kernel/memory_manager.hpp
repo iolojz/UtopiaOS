@@ -14,6 +14,7 @@
 
 #include "memory_map.hpp"
 #include "distributed_resource.hpp"
+#include "buddy_resource.hpp"
 
 #include "target/config.hpp"
 #include "utils/debug.hpp"
@@ -127,11 +128,13 @@ namespace UtopiaOS
              */
             distributed_resource avm_resource;
             
-            /** \brief A pool \a std::memory_resource object that
+            /** \brief A std::pmr::memory_resource object that
              *         is exposed for general purpose allocations
              *         of the available memory.
+             * \note It can only allocate sub-pagesize memory
+             *       chunks.
              */
-            std::pmr::unsynchronized_pool_resource avm_pool_resource;
+            buddy_resource subpage_resource;
             
             /** \class memory_requirement
              * \brief A Function object returning the memory
@@ -572,7 +575,8 @@ namespace UtopiaOS
                                                          address_of() ),
                          boost::make_transform_iterator( available_memory.end(),
                                                          address_of() ) ),
-            avm_pool_resource( &avm_resource )
+            subpage_resource( smallest_memory_chunk, pagesize,
+                             pagesize, &avm_resource )
             {}
         public:
             /** \brief Construct the memory manager from a memory map
@@ -592,9 +596,8 @@ namespace UtopiaOS
             : unsynchronized_memory_manager( build_memory_manager( mm, omd_begin, omd_end ) )
             {}
             
-            /** \brief Because an unsynchronized_memory_manager manages a single
-             *         std::pmr::unsynchronized_pool_resource which is itself
-             *         not copyable, the copy constructor has to be deleted.
+            /** \brief An unsynchronized_memory_manager is explicitly
+             *         not copy-constructible!
              */
             unsynchronized_memory_manager( const unsynchronized_memory_manager & ) = delete;
             
@@ -603,9 +606,8 @@ namespace UtopiaOS
              */
             unsynchronized_memory_manager( unsynchronized_memory_manager && ) = default;
             
-            /** \brief Because an unsynchronized_memory_manager manages a single
-             *         std::pmr::unsynchronized_pool_resource which is itself
-             *         not copy-assignable, the copy-assign constructor has to be deleted.
+            /** \brief An unsynchronized_memory_manager is explicitly
+             *         not copy-assignable!
              */
             unsynchronized_memory_manager &operator=( const unsynchronized_memory_manager & ) = delete;
             
@@ -616,14 +618,13 @@ namespace UtopiaOS
             
             /** \brief Returns a memory resource that can be used to
              *         allocate memory managed by the memory manager.
-             * \note Deallocating memory is not guaranteed to make
-             *       the memory available again!
              * \returns A memory resource object that can be used to
-             *         allocate memory managed by the memory manager.
+             *          allocate chunks that fit into the kernel
+             *          pagesize.
              */
-            std::pmr::memory_resource *exposed_resource( void )
+            std::pmr::memory_resource *paged_resource( void )
             {
-                return &avm_resource;
+                return &subpage_resource;
             }
         };
     }

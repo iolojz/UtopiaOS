@@ -22,7 +22,7 @@
 /** \def UTOPIAOS_KERNEL_PAGESIZE
  * \brief Specifies the pagesize used by the kernel.
  */
-#define UTOPIAOS_KERNEL_PAGESIZE (1 << 12)
+#define UTOPIAOS_KERNEL_PAGESIZE (std::size_t(1) << 12)
 
 /** \def UTOPIAOS_TRAP()
  * \brief Causes an immediate halt of the current

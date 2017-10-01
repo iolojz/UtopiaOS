@@ -11,11 +11,13 @@ set (MODULE_KERNEL_HEADERS
   ${MODULE_KERNEL_CONFIG}
   constants.hpp
   distributed_resource.hpp
+  buddy_resource.hpp
   kernel_main.hpp
   memory_manager.hpp
   memory_map.hpp
 )
 set (MODULE_KERNEL_SOURCES
+  buddy_resource.cpp
   kernel_main.cpp
 )
 
