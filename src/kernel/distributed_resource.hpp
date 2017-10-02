@@ -190,6 +190,16 @@ namespace UtopiaOS
                                  RandomAccessIterator end )
             : resources( store_resources( begin, end ) )
             {}
+            
+            /** \brief A std::pmr::memory_resource should not be
+             *         copyable.
+             */
+            distributed_resource( const distributed_resource & ) = delete;
+            
+            /** \brief A std::pmr::memory_resource should not be
+             *         movable.
+             */
+            distributed_resource( distributed_resource && ) = delete;
         };
     }
 }

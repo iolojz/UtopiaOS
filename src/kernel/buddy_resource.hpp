@@ -206,6 +206,17 @@ namespace UtopiaOS
             buddy_resource( std::size_t min_bs, std::size_t max_bs,
                            std::size_t tlp_alignment,
                            std::pmr::memory_resource *upstream_resource );
+            
+            /** \brief A std::pmr::memory_resource should not be
+             *         copyable.
+             */
+            buddy_resource( const buddy_resource & ) = delete;
+            
+            /** \brief A std::pmr::memory_resource should not be
+             *         movable.
+             */
+            buddy_resource( buddy_resource && ) = delete;
+            
             virtual ~buddy_resource( void );
         };
     }
