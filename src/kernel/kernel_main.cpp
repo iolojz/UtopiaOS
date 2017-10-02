@@ -52,8 +52,10 @@ namespace
     utils::runtime_assert( environment->kernel_stack_region.size >= min_kernel_stack_size,
            "Kernel stack size too small" );
     
-    /** \todo initialize certain essential parts of the c++ runtime
-     * exception handling
+    /** \todo initialize certain essential parts of the c++ runtime:
+     * - exception handling
+     * - floating point ?
+     * - memory stuff (new, delete, default_resource, ...)
      */
     
     auto memory_manager = setup_memory_manager( environment );

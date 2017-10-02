@@ -114,7 +114,8 @@ namespace UtopiaOS
                 {
                     while( first != last )
                     {
-                        constructor( current, *first );
+                        pointer to_initialize = current++;
+                        constructor( to_initialize, *first );
                         ++first;
                     }
                 } catch( ... )
