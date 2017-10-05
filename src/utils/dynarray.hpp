@@ -49,6 +49,7 @@ namespace UtopiaOS
         private:
             allocator_type allocator;
             size_type length;
+            size_type length_to_deallocate;
             pointer buffer;
         public:
             size_type size( void ) const { return length; }
@@ -107,6 +108,7 @@ namespace UtopiaOS
                      const allocator_type &alloc,
                      Constructor constructor = Constructor() )
             : allocator( alloc ), length( last - first ),
+            length_to_deallocate( length ),
             buffer( allocator.allocate( length ) )
             {
                 pointer current = buffer;
@@ -126,7 +128,7 @@ namespace UtopiaOS
                         current->~value_type();
                     }
                     
-                    allocator.deallocate( buffer, length );
+                    allocator.deallocate( buffer, length_to_deallocate );
                     throw;
                 }
             }
@@ -160,6 +162,7 @@ from another dynarray of shorter length than specified." );
                 }
                 
                 other.length = 0;
+                other.length_to_deallocate = 0;
                 other.buffer = nullptr;
             }
             
@@ -170,8 +173,8 @@ from another dynarray of shorter length than specified." );
                 } );
                 
                 // Allow for desctruction of a moved dynarray
-                if( length != 0 )
-                    allocator.deallocate( buffer, length );
+                if( length_to_deallocate != 0 )
+                    allocator.deallocate( buffer, length_to_deallocate );
             }
         };
     }
