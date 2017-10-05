@@ -2,11 +2,7 @@
 * \{
 *
 * \file kernel/memory_manager.hpp
-* \brief This file declares two types of memory managers,
-*        an unsynchronized and a synchronized.
-*
-* They are intended to be used during different stages of
-* OS boot.
+* \brief This file defines the memory manager.
 */
 
 #ifndef H_kernel_memory_manager
@@ -40,11 +36,11 @@ namespace UtopiaOS
 {
     namespace kernel
     {
-        /** \class unsynchronized_memory_manager
-         * \brief A memory managing object from which allocators
-         *        can be retrieved.
+        /** \class memory_manager
+         * \brief A memory managing object from which
+         *        memory_resources can be retrieved.
          */
-        class unsynchronized_memory_manager
+        class memory_manager
         {
         private:
             /** \name Memory Tags
@@ -123,18 +119,13 @@ namespace UtopiaOS
                 std::pmr::polymorphic_allocator<std::pmr::monotonic_buffer_resource>
             > available_memory;
             
-            /** \brief The \a std::memory_resource object managing
-             *         the available memory.
+            /** \brief A memory resource that can be used to
+             *         allocate memory managed by the memory manager.
              */
-            distributed_resource avm_resource;
-            
-            /** \brief A std::pmr::memory_resource object that
-             *         is exposed for general purpose allocations
-             *         of the available memory.
-             * \note It can only allocate sub-pagesize memory
-             *       chunks.
-             */
-            buddy_resource subpage_resource;
+            std::unique_ptr<
+                distributed_resource,
+                utils::destruct_deleter<distributed_resource>
+            > avm_resource;
             
             /** \class memory_requirement
              * \brief A Function object returning the memory
@@ -228,9 +219,9 @@ namespace UtopiaOS
              *         not contained within the memory map.
              */
             template<class MemMap, class RandomAccessIterator>
-            static unsynchronized_memory_manager build_memory_manager( const MemMap &memmap,
-                                                                      RandomAccessIterator omd_begin,
-                                                                      RandomAccessIterator omd_end )
+            static memory_manager build_memory_manager( const MemMap &memmap,
+                                                       RandomAccessIterator omd_begin,
+                                                       RandomAccessIterator omd_end )
             {
                 utils::debug_assert( std::is_sorted( omd_begin, omd_end ),
                              "The omd has to be sorted!" );
@@ -308,10 +299,10 @@ namespace UtopiaOS
                              iresource( region.base_ptr(), region.size ) );
                 } );
                 
-                return unsynchronized_memory_manager( memmap,
-                                                     boost::begin( omd_final ),
-                                                     boost::end( omd_final ),
-                                                     std::move( iresources ) );
+                return memory_manager( memmap,
+                                      boost::begin( omd_final ),
+                                      boost::end( omd_final ),
+                                      std::move( iresources ) );
             }
             
             /** \brief Try to fulfil a memory request
@@ -560,10 +551,10 @@ namespace UtopiaOS
              * \note The resources in \a mr will always be stolen (moved).
              */
             template<class MemMap, class InputIterator, class Resources>
-            unsynchronized_memory_manager( const MemMap &mm,
-                                          InputIterator omd_begin,
-                                          InputIterator omd_end,
-                                          Resources &&mr )
+            memory_manager( const MemMap &mm,
+                           InputIterator omd_begin,
+                           InputIterator omd_end,
+                           Resources &&mr )
             : iresources( std::move( mr ) ),
             memmap( mm,
                    iresources[tag_index[boost::hana::type_c<memmap_memory_tag>]].get() ),
@@ -571,12 +562,12 @@ namespace UtopiaOS
                 iresources[tag_index[boost::hana::type_c<omd_memory_tag>]].get() ),
             available_memory( enumerate_avm( memmap, omd.cbegin(), omd.cend(),
                  iresources[tag_index[boost::hana::type_c<avm_memory_tag>]].get() ) ),
-            avm_resource( boost::make_transform_iterator( available_memory.begin(),
-                                                         address_of() ),
-                         boost::make_transform_iterator( available_memory.end(),
-                                                         address_of() ) ),
-            subpage_resource( smallest_memory_chunk, pagesize,
-                             pagesize, &avm_resource )
+            avm_resource( new distributed_resource(
+                 boost::make_transform_iterator( available_memory.begin(),
+                                                address_of() ),
+                 boost::make_transform_iterator( available_memory.end(),
+                                                address_of() )
+                                                  ) )
             {}
         public:
             /** \brief Construct the memory manager from a memory map
@@ -590,41 +581,43 @@ namespace UtopiaOS
              * \param[in] omd_end End of omd
              */
             template<class MemMap, class RandomAccessIterator>
-            unsynchronized_memory_manager( const MemMap &mm,
+            memory_manager( const MemMap &mm,
                                           RandomAccessIterator omd_begin,
                                           RandomAccessIterator omd_end )
-            : unsynchronized_memory_manager( build_memory_manager( mm, omd_begin, omd_end ) )
+            : memory_manager( build_memory_manager( mm, omd_begin, omd_end ) )
             {}
             
             /** \brief An unsynchronized_memory_manager is explicitly
              *         not copy-constructible!
              */
-            unsynchronized_memory_manager( const unsynchronized_memory_manager & ) = delete;
+            memory_manager( const memory_manager & ) = delete;
             
             /** \brief An unsynchronized_memory_manager is explicitly
              *         move-constructible!
              */
-            unsynchronized_memory_manager( unsynchronized_memory_manager && ) = default;
+            memory_manager( memory_manager && ) = default;
             
             /** \brief An unsynchronized_memory_manager is explicitly
              *         not copy-assignable!
              */
-            unsynchronized_memory_manager &operator=( const unsynchronized_memory_manager & ) = delete;
+            memory_manager &operator=( const memory_manager & ) = delete;
             
             /** \brief An unsynchronized_memory_manager is explicitly
-             *         move-assignable!
+             *         not move-assignable!
              */
-            unsynchronized_memory_manager &operator=( unsynchronized_memory_manager && ) = default;
+            memory_manager &operator=( memory_manager && ) = delete;
             
             /** \brief Returns a memory resource that can be used to
              *         allocate memory managed by the memory manager.
-             * \returns A memory resource object that can be used to
-             *          allocate chunks that fit into the kernel
-             *          pagesize.
+             * \returns Returns a memory resource that can be used to
+             *         allocate memory managed by the memory manager.
+             * \warning The returned resource is not thread-safe and
+             *          will never make deallocated memory available
+             *          again.
              */
-            std::pmr::memory_resource *paged_resource( void )
+            std::pmr::memory_resource *unsynchronized_monotonic_resource( void )
             {
-                return &subpage_resource;
+                return avm_resource.get();
             }
         };
     }

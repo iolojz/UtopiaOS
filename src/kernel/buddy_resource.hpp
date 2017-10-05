@@ -23,7 +23,8 @@ namespace UtopiaOS
         {
             static constexpr std::size_t max_align = alignof(std::max_align_t);
             
-            std::size_t block_size_at_level( std::size_t level, std::size_t min_msb )
+            static std::size_t block_size_at_level( std::size_t level,
+                                                   std::size_t min_msb )
             {
                 return (std::size_t(1U) << (level + min_msb - 1));
             }

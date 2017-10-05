@@ -35,12 +35,12 @@ namespace
     /** \brief Create a simple memory manager from the memory data.
      * \param[in] env The environment provided by the bootloader
      */
-    unsynchronized_memory_manager setup_memory_manager( const environment_v1 *env );
+    memory_manager setup_memory_manager( const environment_v1 *env );
     
     /** \brief Become a scheduler and start the memory managing process.
      * \param[in] mm The current memory manager whose memory should be used
      */
-    [[noreturn]] void morph_into_scheduler_outsource_memory( unsynchronized_memory_manager &&mm );
+    [[noreturn]] void morph_into_scheduler_outsource_memory( memory_manager &&mm );
 }
 
 [[noreturn]] void kernel::kernel_main( const environment *env )
@@ -66,7 +66,7 @@ namespace
 {
     using namespace kernel;
     
-    unsynchronized_memory_manager setup_memory_manager( const environment_v1 *env )
+    memory_manager setup_memory_manager( const environment_v1 *env )
     {
         using namespace UtopiaOS;
         using namespace kernel;
@@ -97,9 +97,9 @@ namespace
         auto omd_view = boost::join( environment_omd, kernel_omd );
         std::sort( boost::begin( omd_view ), boost::end( omd_view ) );
         
-        return unsynchronized_memory_manager( memmap,
-                                             boost::begin( omd_view ),
-                                             boost::end( omd_view ) );
+        return memory_manager( memmap,
+                              boost::begin( omd_view ),
+                              boost::end( omd_view ) );
     }
 }
 
